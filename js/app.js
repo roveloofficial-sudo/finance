@@ -46,7 +46,28 @@
   }
   R.namaAkun = (no) => (R.mAkun && R.mAkun[no] ? R.mAkun[no].nama : no || '–');
   R.akunKas = () => ((R.boot && R.boot.akun) || []).filter((a) => a.kas && a.aktif);
-  R.chTag = (id) => { const c = R.mCh && R.mCh[id]; return c ? '<span class="ch-tag"><span class="ch-dot" style="background:' + R.esc(c.warna) + '"></span>' + R.esc(c.nama) + '</span>' : R.esc(id || '–'); };
+  R.chTag = (id) => { const c = R.mCh && R.mCh[id]; return c ? '<span class="ch-tag">' + R.chLogo(id, 18) + R.esc(c.nama) + '</span>' : R.esc(id || '–'); };
+  /** Merek di sidebar: logo unggahan Owner, atau wordmark ROVELO bawaan. */
+  R.brandHTML = function (us) {
+    us = us || {};
+    if (us.logo_data) return '<div class="brand-mark"><img alt="" src="' + R.esc(us.logo_data) + '"></div><div>' + R.esc(us.nama_usaha || 'ROVELO') + '<small>Finance</small></div>';
+    return '<div><img class="brand-word" src="img/rovelo-hitam.png" alt="ROVELO"><span class="brand-sub">FINANCE</span></div>';
+  };
+  /** Panel sampul futuristik di halaman masuk. */
+  function sampul(judul, sub) {
+    const logos = ['SHP', 'TTS', 'LZD', 'TKP', 'RSL'].map((c) => '<img alt="" src="img/ch-' + c + '.png">').join('');
+    const koin = (k) => '<div class="fkoin ' + k + '"><div class="koin"><i>Rp</i><i class="b">R</i></div></div>';
+    return '<section class="auth-art"><div class="aa-grid"></div><div class="aa-glow g1"></div><div class="aa-glow g2"></div>' +
+      '<div class="aa-top"><img class="aa-word" src="img/rovelo-putih.png" alt="ROVELO"><span class="aa-tag">FINANCE</span></div>' +
+      '<div class="aa-mid"><span class="aa-kicker"><i></i>Sistem keuangan ROVELO</span><h2>' + judul + '</h2><p>' + sub + '</p></div>' +
+      '<div class="aa-scene" aria-hidden="true">' +
+      '<div class="glass gl-kpi"><small>Laba bersih bulan ini</small><b>Rp83.009.992</b><span class="naik">▲ 18,4% vs bulan lalu</span>' +
+      '<svg viewBox="0 0 220 54" preserveAspectRatio="none"><defs><linearGradient id="gk" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#F97316" stop-opacity=".55"/><stop offset="1" stop-color="#F97316" stop-opacity="0"/></linearGradient></defs>' +
+      '<path d="M0 44 C 22 40, 30 30, 50 33 S 82 22, 100 26 S 132 12, 150 16 S 186 6, 220 4 L220 54 L0 54Z" fill="url(#gk)"/><path d="M0 44 C 22 40, 30 30, 50 33 S 82 22, 100 26 S 132 12, 150 16 S 186 6, 220 4" fill="none" stroke="#FB923C" stroke-width="2.4"/></svg></div>' +
+      '<div class="glass gl-ch"><small>Dana marketplace siap dicairkan</small><b>Rp42.822.705</b><div class="logos">' + logos + '</div><div class="bar"><i style="width:72%"></i></div></div>' +
+      koin('k1') + koin('k2') + koin('k3') + '</div>' +
+      '<div class="aa-foot"><span>SAK EMKM</span><span>PPh Final UMKM 0,5%</span><span>Shopee · TikTok · Lazada · Tokopedia</span></div></section>';
+  }
   R.opsiKas = (pilih) => R.akunKas().map((a) => '<option value="' + a.no + '" ' + (a.no === pilih ? 'selected' : '') + '>' + R.esc(a.nama) + '</option>').join('');
   R.opsiChannel = (pilih, filter) => ((R.boot && R.boot.channel) || []).filter((c) => c.aktif && (!filter || filter(c))).map((c) => '<option value="' + c.id + '" ' + (c.id === pilih ? 'selected' : '') + '>' + R.esc(c.nama) + '</option>').join('');
   R.terkunci = (tgl) => ((R.boot && R.boot.periodeTerkunci) || []).indexOf(String(tgl).slice(0, 7)) >= 0;
@@ -54,10 +75,8 @@
   // ---------- Login ----------
   app.keLogin = function (pesan) {
     R.boot = null; document.title = 'Masuk — ROVELO Finance';
-    root().innerHTML = '<div class="auth"><section class="auth-art"><div class="brand"><div class="brand-mark">R</div><div>ROVELO<small>Finance</small></div></div>' +
-      '<div style="position:relative;z-index:1"><h2>Keuangan toko jadi jelas, setiap hari.</h2><p>Catat pemasukan & pengeluaran, impor penjualan marketplace, dan lihat laba rugi, neraca, serta arus kas yang tersusun sesuai SAK EMKM.</p></div>' +
-      '<div class="auth-stats"><div class="chip-stat"><span class="small muted">Channel</span><b>6 sumber penjualan</b></div><div class="chip-stat"><span class="small muted">Laporan</span><b>Laba rugi · Neraca · Arus kas</b></div></div></section>' +
-      '<section class="auth-form"><form class="auth-box" novalidate><div class="brand"><div class="brand-mark">R</div><div>ROVELO Finance<small>Portal manajemen ROVELO</small></div></div>' +
+    root().innerHTML = '<div class="auth">' + sampul('Keuangan toko jadi <em>jelas</em>, setiap hari.', 'Catat pemasukan & pengeluaran, impor penjualan marketplace, lalu lihat laba rugi, neraca, dan arus kas yang tersusun otomatis sesuai SAK EMKM.') +
+      '<section class="auth-form"><form class="auth-box" novalidate><div class="brand">' + R.brandHTML() + '</div>' +
       '<h1>Masuk</h1><p class="sub">Gunakan akun yang diberikan Owner.</p>' +
       (pesan ? '<div class="alert w mb">' + R.ic('info', 's18') + '<span>' + R.esc(pesan) + '</span></div>' : '') +
       '<div class="stack"><div class="field"><label for="lu">Username</label><input id="lu" class="inp" name="u" autocomplete="username" autocapitalize="none" spellcheck="false" required></div>' +
@@ -79,8 +98,8 @@
     };
   };
   app.wajibGanti = function (sandiLama) {
-    root().innerHTML = '<div class="auth"><section class="auth-art"><div class="brand"><div class="brand-mark">R</div><div>ROVELO<small>Finance</small></div></div><div style="position:relative;z-index:1"><h2>Amankan akun Anda.</h2><p>Kata sandi sementara dari Owner wajib diganti sebelum mulai bekerja.</p></div><div></div></section>' +
-      '<section class="auth-form"><form class="auth-box" novalidate><div class="brand"><div class="brand-mark">R</div><div>ROVELO Finance<small>Ganti kata sandi</small></div></div><h1>Buat kata sandi baru</h1><p class="sub">Minimal 8 karakter, berisi huruf besar, huruf kecil, dan angka.</p><div class="stack">' +
+    root().innerHTML = '<div class="auth">' + sampul('Amankan <em>akun</em> Anda.', 'Kata sandi sementara dari Owner wajib diganti sebelum mulai bekerja.') +
+      '<section class="auth-form"><form class="auth-box" novalidate><div class="brand">' + R.brandHTML() + '</div><h1>Buat kata sandi baru</h1><p class="sub">Minimal 8 karakter, berisi huruf besar, huruf kecil, dan angka.</p><div class="stack">' +
       '<div class="field"><label>Kata sandi sementara</label><input class="inp" name="l" type="password" autocomplete="current-password" value="' + R.esc(sandiLama || '') + '"></div>' +
       '<div class="field"><label>Kata sandi baru</label><input class="inp" name="b" type="password" autocomplete="new-password"></div>' +
       '<div class="field"><label>Ulangi kata sandi baru</label><input class="inp" name="u" type="password" autocomplete="new-password"></div>' +
@@ -113,7 +132,7 @@
     const nav = MENU.filter((m) => m.grup || R.boleh(m.roles));
     // buang label grup tanpa isi
     const navBersih = nav.filter((m, i) => !m.grup || (nav[i + 1] && !nav[i + 1].grup));
-    root().innerHTML = '<div class="shell"><aside class="side" aria-label="Menu utama"><div class="brand"><div class="brand-mark">' + logo + '</div><div>' + R.esc(us.nama_usaha || 'ROVELO') + '<small>Finance</small></div></div><nav class="nav">' +
+    root().innerHTML = '<div class="shell"><aside class="side" aria-label="Menu utama"><div class="brand">' + R.brandHTML(us) + '</div><nav class="nav">' +
       navBersih.map((m) => m.grup ? '<div class="nav-label">' + m.grup + '</div>' : '<a href="#/' + m.id + '" data-nav="' + m.id + '">' + R.ic(m.ic) + '<span>' + m.label + '</span>' + (m.id === 'transaksi' ? '<span class="badge-n hidden" data-draft></span>' : '') + '</a>').join('') +
       '</nav><div class="side-foot"><div class="me" data-akun tabindex="0"><div class="avatar">' + R.esc((u.nama || u.username || '?').charAt(0).toUpperCase()) + '</div><div class="grow"><b class="ellipsis">' + R.esc(u.nama || u.username) + '</b><small>' + R.esc(u.peran) + '</small></div><button class="btn ghost sm icon" data-keluar title="Keluar" aria-label="Keluar">' + R.ic('logout', 's18') + '</button></div></div></aside>' +
       '<div class="main"><header class="top"><button class="icon-btn mobile-only" data-menu aria-label="Menu">' + R.ic('menu') + '</button><h1 data-judul>ROVELO Finance</h1><span class="sp"></span><span class="sync desk-only" data-sync><span class="sd"></span><span data-sync-t>Tersinkron</span></span>' +
@@ -227,10 +246,10 @@
     const tampil = (d) => {
       R.boot = d; indeks();
       if (!sudah) { sudah = true; kerangka(); rute(); muatNotif(); }
-      else { const br = R.$('.side .brand'); if (br) br.innerHTML = '<div class="brand-mark">' + (d.usaha.logo_data ? '<img alt="" src="' + R.esc(d.usaha.logo_data) + '">' : 'R') + '</div><div>' + R.esc(d.usaha.nama_usaha || 'ROVELO') + '<small>Finance</small></div>'; }
+      else { const br = R.$('.side .brand'); if (br) br.innerHTML = R.brandHTML(d.usaha); }
     };
     if (tersimpan && tersimpan.user && tersimpan.user.username === s.user.username) tampil(tersimpan);
-    else root().innerHTML = '<div class="boot"><div class="row"><span class="dot"></span><span class="muted">Menyiapkan ROVELO Finance…</span></div></div>';
+    else root().innerHTML = R.loaderKoin('Menyiapkan ROVELO Finance');
     try {
       const d = await R.api.get('app.bootstrap', {});
       if (d.user.wajib_ganti_sandi) return app.wajibGanti();

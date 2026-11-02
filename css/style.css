@@ -404,3 +404,81 @@ table.tbl { width: 100%; border-collapse: separate; border-spacing: 0; }
   .shell { display: block; } .content { padding: 0; } .card { box-shadow: none; border: 0; }
   body { background: #fff; }
 }
+
+/* =========================================================
+   v1.1 — Sampul login futuristik, loading koin, logo channel
+   ========================================================= */
+.brand-word { height: 19px; width: auto; display: block; }
+.brand-sub { display: inline-block; margin-top: 5px; font-size: 10px; font-weight: 800; letter-spacing: .22em; color: var(--accent-600); background: var(--accent-tint); padding: 2px 8px; border-radius: 9999px; }
+.ch-logo { border-radius: 6px; object-fit: contain; flex: none; vertical-align: middle; background: #fff; }
+.ch-ic { display: inline-grid; place-items: center; border-radius: 6px; background: var(--canvas); color: var(--ink-2); flex: none; }
+.ch-ic svg { width: 70%; height: 70%; }
+.chip .ch-logo { margin-left: -4px; }
+
+/* ---- loading koin ---- */
+.boot { background: radial-gradient(600px 300px at 50% 60%, rgba(249, 115, 22, .10), transparent 70%), var(--canvas); }
+.koin-wrap { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.koin-wrap .brand-word { height: 18px; opacity: .9; margin-bottom: 18px; }
+.koin-lompat { animation: koinLompat 1.6s ease-in-out infinite; perspective: 600px; }
+.koin { width: 72px; height: 72px; position: relative; transform-style: preserve-3d; animation: koinPutar 1.6s cubic-bezier(.45, 0, .55, 1) infinite; }
+.koin::before, .koin::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: linear-gradient(90deg, #9A3412, #C2410C 50%, #9A3412); }
+.koin::before { transform: translateZ(-2px); } .koin::after { transform: translateZ(1px); }
+.koin i { position: absolute; inset: 0; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-weight: 800; font-size: 21px; letter-spacing: -.02em; color: #7C2D12;
+  background: radial-gradient(circle at 32% 28%, #FFF4E0 0%, #FDBA74 32%, #F97316 64%, #C2410C 100%);
+  box-shadow: inset 0 0 0 5px rgba(255, 255, 255, .30), inset 0 0 0 7px rgba(194, 65, 12, .45), inset 0 -6px 12px rgba(124, 45, 18, .35); backface-visibility: hidden; transform: translateZ(3px); }
+.koin i.b { transform: rotateY(180deg) translateZ(3px); }
+.koin-bayang { width: 56px; height: 10px; border-radius: 50%; background: rgba(31, 35, 40, .2); filter: blur(2px); animation: koinBayang 1.6s ease-in-out infinite; }
+.koin-teks { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-top: 6px; }
+.koin-teks b { animation: titik 1.2s infinite; opacity: .2; } .koin-teks b:nth-child(2) { animation-delay: .2s; } .koin-teks b:nth-child(3) { animation-delay: .4s; }
+@keyframes koinPutar { to { transform: rotateY(360deg); } }
+@keyframes koinLompat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+@keyframes koinBayang { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.65); opacity: .45; } }
+@keyframes titik { 0%, 100% { opacity: .2; } 50% { opacity: 1; } }
+
+/* ---- sampul login ---- */
+.auth-art { background: radial-gradient(900px 520px at 85% 105%, rgba(249, 115, 22, .38), transparent 62%), radial-gradient(600px 400px at 0% 0%, rgba(124, 108, 242, .16), transparent 60%), linear-gradient(160deg, #0B0E12 0%, #141820 48%, #1F2328 100%); color: #fff; padding: 44px 52px; gap: 28px; }
+.auth-art::after { display: none; }
+.aa-grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255, 255, 255, .055) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, .055) 1px, transparent 1px); background-size: 46px 46px;
+  -webkit-mask-image: radial-gradient(circle at 70% 65%, #000 0%, transparent 72%); mask-image: radial-gradient(circle at 70% 65%, #000 0%, transparent 72%); pointer-events: none; }
+.aa-glow { position: absolute; border-radius: 50%; filter: blur(60px); pointer-events: none; animation: melayang 9s ease-in-out infinite; }
+.aa-glow.g1 { width: 280px; height: 280px; right: 6%; bottom: 14%; background: rgba(249, 115, 22, .35); }
+.aa-glow.g2 { width: 200px; height: 200px; left: 8%; top: 30%; background: rgba(124, 108, 242, .18); animation-delay: -4s; }
+.aa-top, .aa-mid, .aa-scene, .aa-foot { position: relative; z-index: 1; }
+.aa-top { display: flex; align-items: center; gap: 12px; }
+.aa-word { height: 26px; width: auto; }
+.aa-tag { font-size: 11px; font-weight: 800; letter-spacing: .32em; color: #FDBA74; border: 1px solid rgba(253, 186, 116, .4); padding: 4px 10px 4px 12px; border-radius: 9999px; background: rgba(249, 115, 22, .08); }
+.aa-kicker { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 600; color: rgba(255, 255, 255, .7); letter-spacing: .04em; }
+.aa-kicker i { width: 7px; height: 7px; border-radius: 50%; background: #4ADE80; box-shadow: 0 0 0 4px rgba(74, 222, 128, .18); }
+.aa-mid h2 { font-size: 40px; line-height: 1.12; letter-spacing: -.03em; margin: 14px 0 12px; max-width: 520px; color: #fff; }
+.aa-mid h2 em { font-style: normal; background: linear-gradient(90deg, #FDBA74, #F97316); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.aa-mid p { color: rgba(255, 255, 255, .66); max-width: 470px; margin: 0; }
+.aa-scene { height: 250px; }
+.glass { position: absolute; background: rgba(255, 255, 255, .065); border: 1px solid rgba(255, 255, 255, .13); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border-radius: 18px; padding: 16px 18px; box-shadow: 0 24px 60px rgba(0, 0, 0, .38); animation: melayang 7s ease-in-out infinite; }
+.glass small { display: block; color: rgba(255, 255, 255, .6); font-size: 11.5px; font-weight: 600; letter-spacing: .02em; }
+.glass b { display: block; font-size: 21px; letter-spacing: -.02em; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.glass .naik { display: inline-flex; gap: 4px; align-items: center; font-size: 11px; font-weight: 700; color: #86EFAC; background: rgba(22, 163, 74, .2); padding: 2px 8px; border-radius: 9999px; margin-top: 6px; }
+.gl-kpi { left: 0; top: 0; width: 260px; }
+.gl-kpi svg { display: block; width: 100%; height: 54px; margin-top: 10px; }
+.gl-ch { left: 210px; top: 132px; width: 270px; animation-delay: -3s; }
+.gl-ch .logos { display: flex; margin-top: 10px; }
+.gl-ch .logos img { width: 34px; height: 34px; border-radius: 50%; background: #fff; padding: 5px; border: 2px solid #1A1E25; margin-left: -8px; object-fit: contain; }
+.gl-ch .logos img:first-child { margin-left: 0; }
+.gl-ch .bar { margin-top: 12px; background: rgba(255, 255, 255, .12); }
+.fkoin { position: absolute; perspective: 500px; animation: melayang 6s ease-in-out infinite; }
+.fkoin .koin { width: 46px; height: 46px; animation-duration: 3.2s; } .fkoin .koin i { font-size: 13px; }
+.fkoin.k1 { right: 10%; top: 4px; } .fkoin.k2 { right: 26%; top: 70px; animation-delay: -2s; } .fkoin.k2 .koin { width: 34px; height: 34px; animation-duration: 4s; } .fkoin.k2 .koin i { font-size: 10px; }
+.fkoin.k3 { left: 300px; top: 30px; animation-delay: -4s; } .fkoin.k3 .koin { width: 28px; height: 28px; animation-duration: 2.6s; } .fkoin.k3 .koin i { font-size: 0; }
+.aa-foot { display: flex; flex-wrap: wrap; gap: 8px; }
+.aa-foot span { font-size: 11.5px; font-weight: 600; color: rgba(255, 255, 255, .72); border: 1px solid rgba(255, 255, 255, .14); background: rgba(255, 255, 255, .04); padding: 6px 12px; border-radius: 9999px; }
+@keyframes melayang { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+.auth-box .brand-word { height: 22px; }
+@media (max-width: 1180px) { .gl-ch { left: 120px; } .fkoin.k3 { display: none; } }
+@media (max-width: 960px) {
+  .auth-art { display: flex; padding: 22px 20px 40px; gap: 8px; min-height: 0; }
+  .aa-scene, .aa-foot, .aa-mid p, .aa-glow.g2 { display: none; }
+  .aa-mid h2 { font-size: 23px; margin: 10px 0 0; }
+  .aa-word { height: 20px; }
+  .auth-form { border-radius: 22px 22px 0 0; margin-top: -22px; position: relative; z-index: 2; align-items: start; padding-top: 26px; }
+  .auth-box > .brand { display: none; }
+  .auth-box h1 { margin-top: 4px; }
+}

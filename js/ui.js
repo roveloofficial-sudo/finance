@@ -146,6 +146,17 @@
   R.$$ = (s, r) => Array.from((r || document).querySelectorAll(s));
   R.on = function (root, ev, sel, fn) { root.addEventListener(ev, (e) => { const t = e.target.closest(sel); if (t && root.contains(t)) fn(e, t); }); };
 
+  // ---------- Logo channel & loading koin ----------
+  const LOGO_CH = { SHP: 1, TTS: 1, LZD: 1, TKP: 1, RSL: 1 };
+  R.chLogo = function (id, s) {
+    s = s || 18;
+    if (LOGO_CH[id]) return '<img class="ch-logo" src="img/ch-' + id + '.png" alt="" width="' + s + '" height="' + s + '" loading="lazy">';
+    if (id === 'MNL') return '<span class="ch-ic" style="width:' + s + 'px;height:' + s + 'px">' + R.ic('store') + '</span>';
+    const c = R.mCh && R.mCh[id];
+    return '<span class="ch-dot" style="background:' + esc(c ? c.warna : '#94A3B8') + '"></span>';
+  };
+  R.loaderKoin = (teks) => '<div class="boot"><div class="koin-wrap"><img class="brand-word" src="img/rovelo-hitam.png" alt="ROVELO"><div class="koin-lompat"><div class="koin"><i>Rp</i><i class="b">R</i></div></div><div class="koin-bayang"></div><div class="koin-teks">' + esc(teks || 'Memuat ROVELO Finance') + '<b>.</b><b>.</b><b>.</b></div></div></div>';
+
   // ---------- Bus peristiwa antar-halaman ----------
   const bus = document.createElement('i');
   R.emit = (n, d) => bus.dispatchEvent(new CustomEvent(n, { detail: d }));

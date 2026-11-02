@@ -192,3 +192,16 @@ Tekan **Ctrl+Shift+R** di browser bila masih tampil versi lama.
 | "Periode … sudah dikunci" | Bulan itu sudah ditutup buku | Owner membuka kunci di Pembukuan → Tutup buku (wajib isi alasan) |
 | "Server sedang sibuk menyimpan data lain" | Ada impor besar berjalan bersamaan | Tunggu beberapa detik lalu ulangi — data tidak dobel |
 | Impor penjualan: SKU belum dikenal | SKU di file belum ada di Master Produk | Klik **Tambah ke master produk** di langkah Periksa, isi HPP |
+
+---
+
+## Bagian G — Data demo untuk latihan
+
+1. Di Apps Script buat file baru **Demo** (+ → Script), tempel isi `Demo.gs`, simpan.
+2. Pilih fungsi **isiDataDemo** → **▶ Run**. Bila log menulis **JALANKAN LAGI**, klik Run sekali lagi (otomatis melanjutkan).
+3. Selesai bila log menulis **✅ Data demo selesai**. Log juga menampilkan akun latihan `admin.demo`, `staf.demo`, `viewer.demo` beserta kata sandi sementaranya.
+4. Buka aplikasi, tekan **Ctrl+Shift+R**.
+
+Isi demo (± 3 bulan terakhir sampai hari ini): 16 produk & HPP, 7 kontak, 4 karyawan, ± 3.000 pesanan Shopee/TikTok/Lazada/Tokopedia + reseller & offline, iklan, operasional, belanja stok tunai & tempo, pencairan dana, piutang & utang, kasbon, gaji 3 bulan, 4 aset (termasuk leasing), sewa dibayar di muka, penyesuaian & PPh Final, 1 bulan terkunci, dan 2 draft Staf untuk latihan posting.
+
+**Sebelum memakai data asli:** jalankan **hapusDataDemo** sekali. Semua transaksi, produk, kontak, karyawan, aset, dan akun `.demo` dihapus. Pengaturan usaha, logo, akun Owner, bagan akun, kategori, dan channel tetap ada. Setelah itu mulai dari **Pembukuan → Saldo awal**.

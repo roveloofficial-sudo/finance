@@ -72,7 +72,7 @@
 
     // channel
     const aktif = (d.channel || []).filter((c) => c.omzet || c.qty || c.iklan);
-    el.querySelector('[data-ch]').innerHTML = aktif.length ? aktif.map((c) => '<div class="ch-card"><div class="ch-top"><span class="ch-dot" style="background:' + esc(c.warna) + '"></span>' + esc(c.nama) + '<span class="grow"></span>' + R.delta(c.omzet, c.omzet_b) + '</div><div style="font-size:20px;font-weight:700" class="num">' + R.rp(c.omzet) + '</div>' +
+    el.querySelector('[data-ch]').innerHTML = aktif.length ? aktif.map((c) => '<div class="ch-card"><div class="ch-top">' + R.chLogo(c.id, 24) + esc(c.nama) + '<span class="grow"></span>' + R.delta(c.omzet, c.omzet_b) + '</div><div style="font-size:20px;font-weight:700" class="num">' + R.rp(c.omzet) + '</div>' +
       '<div class="kv mt" style="margin-top:10px"><dt>Qty / pesanan</dt><dd>' + R.angka(c.qty) + ' / ' + R.angka(c.pesanan) + '</dd><dt>Laba (stl. iklan)</dt><dd class="' + (c.laba < 0 ? 'neg' : 'pos') + '">' + R.rp(c.laba) + '</dd><dt>Biaya iklan</dt><dd>' + R.rp(c.iklan) + '</dd><dt>RTS</dt><dd class="' + (c.rts > 5 ? 'warn' : '') + '">' + R.persen(c.rts) + '</dd></div></div>').join('')
       : '<div style="grid-column:1/-1">' + R.kosong('Belum ada penjualan', 'Impor laporan marketplace atau catat penjualan manual.', 'bag', R.boleh(R.PERAN.OAS) ? '<a class="btn sm primary" href="#/penjualan?tab=impor">Impor penjualan</a>' : '') + '</div>';
 
