@@ -130,7 +130,7 @@
       case 'minggu': { const dow = (new Date(ms(h)).getUTCDay() + 6) % 7; d = R.tambahHari(h, -dow); s = h; break; }
       case 'bulanlalu': { const pl = R.tambahBulan(bln, -1); d = pl + '-01'; s = R.akhirBulan(pl); break; }
       case '6bulan': d = R.tambahBulan(bln, -5) + '-01'; s = h; break;
-      case 'tahun': { const y = tahun || +h.slice(0, 4); d = y + '-01-01'; s = y === +h.slice(0, 4) ? h : y + '-12-31'; break; }
+      case 'tahun': { const y = tahun || +h.slice(0, 4); d = y + '-01-01'; s = y + '-12-31'; break; }
       case '5tahun': d = (+h.slice(0, 4) - 4) + '-01-01'; s = h; break;
       default: d = bln + '-01'; s = h;
     }
