@@ -240,8 +240,10 @@
   };
 
   // ---------- Kerangka & kosong ----------
-  R.kerangka = (n, tipe) => tipe === 'kartu' ? '<div class="grid g4">' + '<div class="card"><div class="sk l" style="width:40%"></div><div class="sk t"></div><div class="sk l" style="width:30%"></div></div>'.repeat(n || 4) + '</div>'
-    : '<div class="card">' + '<div class="sk l"></div>'.repeat(n || 6) + '</div>';
+  /** Animasi koin Rp berputar untuk semua keadaan memuat. */
+  R.koinKecil = (cls) => '<span class="koin-k ' + (cls || '') + '" aria-hidden="true"><span class="koin"><i>Rp</i><i class="b">Rp</i></span></span>';
+  R.loaderMini = (teks) => '<div class="muat-koin" role="status">' + R.koinKecil() + '<div class="koin-teks">' + esc(teks || 'Memuat data') + '<b>.</b><b>.</b><b>.</b></div></div>';
+  R.kerangka = (n, tipe) => tipe === 'kartu' ? '<div class="card">' + R.loaderMini('Memuat ringkasan') + '</div>' : '<div class="card">' + R.loaderMini('Memuat data') + '</div>';
   R.kosong = (judul, pesan, ikon, aksi) => '<div class="empty"><div class="em-ic">' + R.ic(ikon || 'search', 's24') + '</div><b>' + esc(judul) + '</b>' + esc(pesan || '') + (aksi ? '<div class="mt">' + aksi + '</div>' : '') + '</div>';
   R.gagalMuat = (e, el, ulang) => { el.innerHTML = '<div class="card">' + R.kosong('Gagal memuat data', e.message, 'alert', '<button class="btn sm" data-ulang>' + R.ic('refresh', 's16') + ' Coba lagi</button>') + '</div>'; const b = el.querySelector('[data-ulang]'); if (b && ulang) b.onclick = ulang; };
 
@@ -258,14 +260,15 @@
     const kol = cfg.kolom, rows = cfg.baris || [];
     if (!rows.length) { el.innerHTML = R.kosong(cfg.kosong || 'Belum ada data', cfg.kosongPesan || '', cfg.kosongIkon); return { terpilih: () => [] }; }
     const num = (c) => c.tipe === 'rp' || c.tipe === 'angka' || c.tipe === 'persen' || c.n;
-    let h = '<div class="tbl-wrap"><table class="tbl ' + (cfg.kartu !== false ? 'cards ' : '') + (cfg.ringkas ? 'compact' : '') + '"><thead><tr>' + (cfg.pilih ? '<th style="width:36px"><input type="checkbox" data-all aria-label="Pilih semua"></th>' : '') +
+    const nomor = cfg.no !== false && rows.length > 1, mulai = cfg.mulai || 0;
+    let h = '<div class="tbl-wrap"><table class="tbl ' + (cfg.kartu !== false ? 'cards ' : '') + (cfg.ringkas ? 'compact' : '') + '"><thead><tr>' + (cfg.pilih ? '<th style="width:36px"><input type="checkbox" data-all aria-label="Pilih semua"></th>' : '') + (nomor ? '<th class="no">No</th>' : '') +
       kol.map((c) => '<th class="' + (num(c) ? 'n' : '') + '">' + esc(c.label) + '</th>').join('') + '</tr></thead><tbody>';
     rows.forEach((r, i) => {
-      h += '<tr data-i="' + i + '" class="' + (cfg.klik ? 'click ' : '') + (r._pending ? 'pending' : '') + '">' + (cfg.pilih ? '<td class="hide-m" style="width:36px">' + (cfg.bisaPilih && !cfg.bisaPilih(r) ? '' : '<input type="checkbox" data-pick aria-label="Pilih baris">') + '</td>' : '') +
+      h += '<tr data-i="' + i + '" class="' + (cfg.klik ? 'click ' : '') + (r._pending ? 'pending' : '') + '">' + (cfg.pilih ? '<td class="hide-m" style="width:36px">' + (cfg.bisaPilih && !cfg.bisaPilih(r) ? '' : '<input type="checkbox" data-pick aria-label="Pilih baris">') + '</td>' : '') + (nomor ? '<td class="no" data-l="No">' + (mulai + i + 1) + '</td>' : '') +
         kol.map((c) => '<td data-l="' + esc(c.label) + '" class="' + (num(c) ? 'n ' : '') + (c.lead ? 'lead ' : '') + (c.hideM ? 'hide-m ' : '') + (c.cls || '') + '">' + (c.render ? c.render(r) : R.fmtSel(r[c.k], c.tipe)) + '</td>').join('') + '</tr>';
     });
     h += '</tbody>';
-    if (cfg.total) h += '<tfoot><tr>' + (cfg.pilih ? '<td class="hide-m"></td>' : '') + kol.map((c, i) => '<td data-l="' + esc(c.label) + '" class="' + (num(c) ? 'n' : '') + (i === 0 ? ' lead' : '') + '">' + (i === 0 ? 'Total' : cfg.total[c.k] !== undefined ? R.fmtSel(cfg.total[c.k], c.tipe) : '') + '</td>').join('') + '</tr></tfoot>';
+    if (cfg.total) h += '<tfoot><tr>' + (cfg.pilih ? '<td class="hide-m"></td>' : '') + (nomor ? '<td class="no hide-m"></td>' : '') + kol.map((c, i) => '<td data-l="' + esc(c.label) + '" class="' + (num(c) ? 'n' : '') + (i === 0 ? ' lead' : '') + '">' + (i === 0 ? 'Total' : cfg.total[c.k] !== undefined ? R.fmtSel(cfg.total[c.k], c.tipe) : '') + '</td>').join('') + '</tr></tfoot>';
     h += '</table></div>';
     el.innerHTML = h;
     const tb = el.querySelector('tbody');
@@ -325,7 +328,8 @@
   const LIB = {
     chart: ['https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.js'],
     xlsx: ['https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'],
-    pdf: ['https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js', 'https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js']
+    pdf: ['https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js', 'https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js'],
+    excel: ['https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js']
   };
   const muat = {};
   function skrip(src) { return new Promise((ok, no) => { const s = document.createElement('script'); s.src = src; s.async = false; s.crossOrigin = 'anonymous'; s.onload = ok; s.onerror = () => no(new Error('Gagal memuat pustaka. Periksa koneksi internet.')); document.head.appendChild(s); }); }
@@ -333,6 +337,7 @@
     if (n === 'chart' && window.Chart) return Promise.resolve();
     if (n === 'xlsx' && window.XLSX) return Promise.resolve();
     if (n === 'pdf' && window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API.autoTable) return Promise.resolve();
+    if (n === 'excel' && window.ExcelJS) return Promise.resolve();
     if (!muat[n]) muat[n] = LIB[n].reduce((p, src) => p.then(() => skrip(src)), Promise.resolve()).catch((e) => { delete muat[n]; throw e; });
     return muat[n];
   };
@@ -346,29 +351,72 @@
     g.addColorStop(0, warna + (kuat || '40')); g.addColorStop(1, warna + '00');
     return g;
   };
+  /** Warna channel untuk grafik (sudah diuji aman untuk buta warna). */
+  const WARNA_CH = { SHP: '#EE4D2D', TTS: '#0F9F9A', LZD: '#2563EB', TKP: '#65A30D', RSL: '#7C6CF2', MNL: '#94A3B8' };
+  R.warnaCh = (id) => WARNA_CH[id] || ((R.mCh && R.mCh[id] && R.mCh[id].warna) || '#94A3B8');
+  /** Angka sumbu grafik dalam juta: 12,5 jt · 850 rb · 1,2 M */
+  R.rpSumbu = function (v) {
+    const a = Math.abs(v), s = v < 0 ? '−' : '', k = (x) => (Math.round(x * 10) / 10).toString().replace('.', ',');
+    if (a >= 1e9) return s + k(a / 1e9) + ' M'; if (a >= 1e6) return s + k(a / 1e6) + ' jt'; if (a >= 1e3) return s + k(a / 1e3) + ' rb'; return s + a;
+  };
+  // plugin: label nilai di atas batang (hanya dataset yang diminta lewat cfg.labelNilai)
+  const pluginLabel = {
+    id: 'labelNilai',
+    afterDatasetsDraw(ch, args, opt) {
+      if (!opt || !opt.ds || !opt.ds.length) return;
+      const ctx = ch.ctx; ctx.save(); ctx.font = '600 11px ' + ch.options.font.family; ctx.fillStyle = '#5B6270'; ctx.textAlign = 'center';
+      opt.ds.forEach((di) => {
+        const meta = ch.getDatasetMeta(di); if (meta.hidden) return;
+        meta.data.forEach((el, i) => {
+          const v = ch.data.datasets[di].data[i]; if (!v) return;
+          const t = opt.angka ? R.angka(v) : R.rpSumbu(v);
+          const hz = ch.options.indexAxis === 'y';
+          if (hz) { ctx.textAlign = 'left'; ctx.fillText(t, el.x + 6, el.y + 4); }
+          else ctx.fillText(t, el.x, v >= 0 ? el.y - 6 : el.y + 14);
+        });
+      });
+      ctx.restore();
+    }
+  };
   R.grafik = async function (canvas, cfg) {
     await R.lib('chart');
     const C = window.Chart;
     if (!C._rovelo) {
-      C.defaults.font.family = getComputedStyle(document.body).fontFamily; C.defaults.font.size = 12; C.defaults.color = '#8A919E';
+      C.defaults.font.family = getComputedStyle(document.body).fontFamily; C.defaults.font.size = 12; C.defaults.color = '#5B6270';
       C.defaults.plugins.legend.display = false; C.defaults.maintainAspectRatio = false; C.defaults.animation.duration = 450;
       C.defaults.plugins.tooltip.backgroundColor = '#1F2328'; C.defaults.plugins.tooltip.padding = 10; C.defaults.plugins.tooltip.cornerRadius = 10;
       C.defaults.plugins.tooltip.titleFont = { weight: '600' }; C.defaults.plugins.tooltip.boxPadding = 4;
       C.defaults.elements.line.cubicInterpolationMode = 'monotone';
+      C.defaults.elements.bar.borderRadius = 4; C.defaults.elements.bar.borderSkipped = 'start';
+      C.register(pluginLabel);
       C._rovelo = 1;
     }
     const lama = grafikAktif.get(canvas); if (lama) lama.destroy();
-    const skalaRp = { grid: { color: '#EEF0F3', drawTicks: false }, border: { display: false }, ticks: { padding: 8, callback: (v) => R.rpK(v).replace('Rp', '') } };
-    const skalaX = { grid: { display: false }, border: { display: false }, ticks: { padding: 6, maxRotation: 0, autoSkipPadding: 12 } };
+    const judulY = cfg.judulY === undefined ? (cfg.angka ? 'pcs' : 'Rupiah') : cfg.judulY;
+    const skalaRp = { beginAtZero: true, grid: { color: '#EEF0F3', drawTicks: false }, border: { display: false }, ticks: { padding: 8, maxTicksLimit: 6, callback: (v) => cfg.angka ? R.angka(v) : R.rpSumbu(v) }, title: { display: !!judulY, text: judulY, color: '#8A919E', font: { size: 11 } } };
+    const skalaX = { grid: { display: false }, border: { color: '#E3E6EB' }, ticks: { padding: 6, maxRotation: 0, autoSkipPadding: 14 } };
     cfg.options = cfg.options || {};
     if (cfg.type !== 'doughnut' && !cfg.options.indexAxis) cfg.options.scales = Object.assign({ x: skalaX, y: skalaRp }, cfg.options.scales || {});
     if (cfg.options.indexAxis === 'y') cfg.options.scales = Object.assign({ y: skalaX, x: skalaRp }, cfg.options.scales || {});
     cfg.options.plugins = cfg.options.plugins || {};
-    cfg.options.plugins.tooltip = Object.assign({ callbacks: { label: (c) => ' ' + (c.dataset.label ? c.dataset.label + ': ' : '') + (cfg.angka ? R.angka(c.parsed.y !== undefined && cfg.options.indexAxis !== 'y' ? c.parsed.y : c.parsed.x) : R.rp(cfg.options.indexAxis === 'y' ? c.parsed.x : c.parsed.y !== undefined ? c.parsed.y : c.parsed)) } }, cfg.options.plugins.tooltip || {});
+    const nSeri = (cfg.data.datasets || []).length;
+    if (nSeri > 1 && !cfg.options.plugins.legend) cfg.options.plugins.legend = { display: true, position: 'top', align: 'end', labels: { usePointStyle: true, boxWidth: 8, boxHeight: 8, padding: 14, color: '#1F2328' } };
+    cfg.options.plugins.labelNilai = { ds: cfg.labelNilai || [], angka: !!cfg.angka };
+    if (cfg.labelNilai && cfg.labelNilai.length) cfg.options.layout = Object.assign({ padding: { top: 18, right: cfg.options.indexAxis === 'y' ? 56 : 0 } }, cfg.options.layout || {});
+    cfg.options.plugins.tooltip = Object.assign({ callbacks: { label: (c) => ' ' + (c.dataset.label ? c.dataset.label + ': ' : '') + (cfg.angka ? R.angka(c.parsed.y !== undefined && cfg.options.indexAxis !== 'y' ? c.parsed.y : c.parsed.x) + ' pcs' : R.rp(cfg.options.indexAxis === 'y' ? c.parsed.x : c.parsed.y !== undefined ? c.parsed.y : c.parsed)) } }, cfg.options.plugins.tooltip || {});
     cfg.options.interaction = cfg.options.interaction || { mode: 'index', intersect: false };
     const ch = new C(canvas.getContext('2d'), cfg);
     grafikAktif.set(canvas, ch);
     return ch;
+  };
+  /** Daftar batang mendatar (HTML): [{label, n, warna?, sub?}] — untuk porsi/komposisi yang mudah dibaca. */
+  R.batangList = function (list, opt) {
+    opt = opt || {};
+    if (!list || !list.length) return R.kosong(opt.kosong || 'Belum ada data', '', opt.ikon || 'chart');
+    const tot = opt.total || list.reduce((s, x) => s + Math.max(0, x.n), 0) || 1;
+    const maks = Math.max(...list.map((x) => Math.abs(x.n)), 1);
+    return '<div class="blist">' + list.map((x) => '<div class="bl-row' + (x.sorot ? ' sorot' : '') + '"><div class="bl-top"><span class="bl-lbl">' + (x.ikon || '') + esc(x.label) + '</span><span class="bl-val"><b class="num' + (x.n < 0 ? ' neg' : '') + '">' + (opt.angka ? R.angka(x.n) + (opt.satuan || '') : R.rp(x.n)) + '</b>' + (opt.persen === false ? '' : '<span class="bl-pct">' + R.persen(x.n / tot * 100) + '</span>') + '</span></div>' +
+      '<div class="bl-bar"><i style="width:' + Math.max(1.5, Math.abs(x.n) / (opt.relatif ? maks : tot) * 100) + '%;background:' + (x.warna || 'var(--accent)') + '"></i></div>' + (x.sub ? '<div class="xs muted" style="margin-top:3px">' + x.sub + '</div>' : '') + '</div>').join('') + '</div>';
   };
 
   // ---------- Gambar & lampiran ----------
@@ -411,7 +459,7 @@
     }
   };
   R.lihatLampiran = async function (id) {
-    const d = R.drawer({ judul: 'Lampiran', isi: '<div class="sk b"></div>', lebar: true });
+    const d = R.drawer({ judul: 'Lampiran', isi: R.loaderMini('Membuka lampiran'), lebar: true });
     try {
       const f = await R.api.get('lampiran.get', { id: id });
       const bin = atob(f.base64), arr = new Uint8Array(bin.length);
@@ -437,18 +485,43 @@
     return h.charAt(0).toUpperCase() + h.slice(1) + ' rupiah';
   };
 
-  // ---------- Excel ----------
+  // ---------- Excel (ExcelJS untuk ekspor rapi, SheetJS untuk membaca file impor) ----------
   R.xlsx = {
-    async unduh(nama, lembar) {
-      await R.lib('xlsx');
-      const X = window.XLSX, wb = X.utils.book_new();
-      lembar.forEach((l) => {
-        const ws = l.aoa ? X.utils.aoa_to_sheet(l.aoa) : X.utils.json_to_sheet(l.baris && l.baris.length ? l.baris : [{ Keterangan: 'Tidak ada data' }]);
-        const data = l.aoa || [Object.keys((l.baris && l.baris[0]) || { Keterangan: 1 })].concat((l.baris || []).map((r) => Object.values(r)));
-        ws['!cols'] = (data[0] || []).map((_, i) => ({ wch: Math.min(48, Math.max(10, ...data.slice(0, 200).map((r) => String(r[i] === undefined ? '' : r[i]).length + 2))) }));
-        X.utils.book_append_sheet(wb, ws, String(l.nama).replace(/[\\/?*[\]:]/g, '-').slice(0, 31));
+    /** Tambah lembar data tabel biasa: header tebal, garis, format angka, filter, baris beku. */
+    lembarData(wb, l) {
+      const data = l.aoa || [Object.keys((l.baris && l.baris[0]) || { Keterangan: 1 })].concat(l.baris && l.baris.length ? l.baris.map((r) => Object.values(r)) : [['Tidak ada data']]);
+      const ws = wb.addWorksheet(String(l.nama).replace(/[\\/?*[\]:]/g, '-').slice(0, 31), { views: [{ state: 'frozen', ySplit: 1 }], pageSetup: { paperSize: 9, orientation: (data[0] || []).length > 6 ? 'landscape' : 'portrait', fitToPage: true, fitToWidth: 1, fitToHeight: 0 } });
+      const F = { name: 'Calibri', size: 11, color: { argb: 'FF1F2328' } };
+      data.forEach((row, i) => {
+        const r = ws.addRow(row.map((v) => v === undefined || v === null ? '' : v));
+        r.eachCell({ includeEmpty: true }, (c) => {
+          c.font = i === 0 ? Object.assign({}, F, { bold: true }) : F;
+          if (i === 0) { c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF3F4F6' } }; c.border = { bottom: { style: 'thin', color: { argb: 'FF9CA3AF' } } }; c.alignment = { vertical: 'middle', wrapText: true }; }
+          else if (typeof c.value === 'number') { c.numFmt = Number.isInteger(c.value) ? '#,##0;(#,##0);"-"' : '#,##0.0;(#,##0.0);"-"'; }
+          else c.border = undefined;
+        });
       });
-      X.writeFile(wb, nama.replace(/[^\w.\- ]/g, '_') + (/\.xlsx$/.test(nama) ? '' : '.xlsx'));
+      const nCol = Math.max(...data.map((r) => r.length));
+      for (let i = 0; i < nCol; i++) {
+        const isAngka = data.slice(1, 200).some((r) => typeof r[i] === 'number');
+        if (isAngka) ws.getRow(1).getCell(i + 1).alignment = { horizontal: 'right', vertical: 'middle', wrapText: true };
+        ws.getColumn(i + 1).width = Math.min(50, Math.max(10, ...data.slice(0, 300).map((r) => String(r[i] === undefined || r[i] === null ? '' : typeof r[i] === 'number' ? r[i].toLocaleString('id-ID') : r[i]).length + 2)));
+      }
+      if (data.length > 1) ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: nCol } };
+      return ws;
+    },
+    async simpan(wb, nama) {
+      const buf = await wb.xlsx.writeBuffer();
+      const url = URL.createObjectURL(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }));
+      const a = document.createElement('a'); a.href = url; a.download = String(nama).replace(/[^\w.\- ]/g, '_') + (/\.xlsx$/.test(nama) ? '' : '.xlsx');
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 4000);
+    },
+    async unduh(nama, lembar) {
+      await R.lib('excel');
+      const wb = new window.ExcelJS.Workbook(); wb.creator = 'ROVELO Finance'; wb.created = new Date();
+      const dipakai = {};
+      lembar.forEach((l) => { let n = String(l.nama).replace(/[\\/?*[\]:]/g, '-').slice(0, 31), i = 2; while (dipakai[n]) n = String(l.nama).slice(0, 28) + ' ' + i++; dipakai[n] = 1; R.xlsx.lembarData(wb, Object.assign({}, l, { nama: n })); });
+      await R.xlsx.simpan(wb, nama);
     },
     async baca(file) {
       await R.lib('xlsx');
@@ -460,110 +533,75 @@
     }
   };
 
-  // ---------- PDF ----------
+  // ---------- PDF dokumen umum (huruf Inter, gaya bersih) ----------
   function pdfBaru(orientasi) { const J = window.jspdf.jsPDF; return new J({ orientation: orientasi || 'p', unit: 'mm', format: 'a4' }); }
-  function kop(doc, judul, sub) {
-    const u = (R.boot && R.boot.usaha) || {}; const W = doc.internal.pageSize.getWidth();
-    let x = 14;
-    if (u.logo_data) { try { doc.addImage(u.logo_data, u.logo_data.indexOf('png') > 0 ? 'PNG' : 'JPEG', 14, 10, 16, 16); x = 34; } catch (e) { /* logo tidak valid */ } }
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(31, 35, 40); doc.text(u.nama_usaha || 'ROVELO', x, 15);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(91, 98, 112);
-    const info = [u.alamat, [u.no_hp, u.email].filter(Boolean).join(' · '), u.npwp ? 'NPWP ' + u.npwp : ''].filter(Boolean);
-    info.forEach((t, i) => doc.text(String(t).slice(0, 110), x, 19.5 + i * 3.8));
-    doc.setDrawColor(31, 35, 40); doc.setLineWidth(0.6); doc.line(14, 30, W - 14, 30);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(12.5); doc.setTextColor(31, 35, 40); doc.text(judul, W / 2, 38, { align: 'center' });
-    if (sub) { doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(91, 98, 112); doc.text(sub, W / 2, 43, { align: 'center' }); }
-    return sub ? 48 : 44;
+  const ttdUsaha = () => { const u = (R.boot && R.boot.usaha) || {}; return { dibuat: u.pembuat_laporan || '', diperiksa: u.pemeriksa_laporan || '', disetujui: u.penandatangan || '' }; };
+  function tabelBersih(doc, FONT, b, y, fs) {
+    const angka = b.angka || [];
+    doc.autoTable({
+      startY: y, head: b.head, body: b.body, foot: b.foot, theme: 'plain', margin: { left: 16, right: 16, bottom: 18 },
+      styles: { font: FONT, fontSize: fs || 8.5, textColor: [31, 35, 40], cellPadding: { top: 1.6, bottom: 1.6, left: 1.6, right: 1.6 }, overflow: 'linebreak' },
+      headStyles: { fontStyle: 'bold', textColor: [31, 35, 40], fillColor: [243, 244, 246] },
+      footStyles: { fontStyle: 'bold', textColor: [31, 35, 40] },
+      columnStyles: angka.reduce((m, i) => { m[i] = { halign: 'right' }; return m; }, {}),
+      didParseCell: (d) => { if (d.section === 'head' && angka.indexOf(d.column.index) >= 0) d.cell.styles.halign = 'right'; if (d.section === 'foot' && angka.indexOf(d.column.index) >= 0) d.cell.styles.halign = 'right'; if (d.section === 'body' && b.gaya) { const g = b.gaya(d.row.index); if (g) Object.assign(d.cell.styles, g); } },
+      didDrawCell: (d) => {
+        const yb = d.cell.y + d.cell.height;
+        if (d.section === 'head') { doc.setDrawColor(31, 35, 40); doc.setLineWidth(0.3); doc.line(d.cell.x, yb, d.cell.x + d.cell.width, yb); }
+        else if (d.section === 'body') { doc.setDrawColor(232, 234, 238); doc.setLineWidth(0.15); doc.line(d.cell.x, yb, d.cell.x + d.cell.width, yb); }
+        else if (d.section === 'foot') { doc.setDrawColor(31, 35, 40); doc.setLineWidth(0.3); doc.line(d.cell.x, d.cell.y, d.cell.x + d.cell.width, d.cell.y); }
+      }
+    });
+    return doc.lastAutoTable.finalY;
   }
-  function kaki(doc) {
-    const n = doc.internal.getNumberOfPages(), W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
-    for (let i = 1; i <= n; i++) {
-      doc.setPage(i); doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(138, 145, 158);
-      doc.text('Dicetak dari ROVELO Finance · ' + R.waktu(new Date(Date.now() + 7 * 3600e3).toISOString()), 14, H - 8);
-      doc.text('Hal ' + i + ' / ' + n, W - 14, H - 8, { align: 'right' });
-    }
-  }
-  function ttd(doc, y) {
-    const u = (R.boot && R.boot.usaha) || {}; const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
-    if (y > H - 40) { doc.addPage(); y = 20; }
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(31, 35, 40);
-    doc.text('Disetujui oleh,', W - 60, y + 10); doc.text(u.penandatangan || 'Pemilik', W - 60, y + 32);
-    doc.setDrawColor(200); doc.line(W - 60, y + 28, W - 14, y + 28);
-  }
-  const GAYA = { font: 'helvetica', fontSize: 8.5, cellPadding: 2.2, textColor: [31, 35, 40], lineColor: [236, 238, 242], lineWidth: 0.1 };
   R.pdf = {
     /** bagian: [{judul, head:[[..]], body:[[..]], angka:[idx kolom angka], foot:[[..]], gaya(row)}] */
     async laporan(o) {
       await R.lib('pdf');
       const doc = pdfBaru(o.orientasi);
-      let y = kop(doc, o.judul, o.sub);
-      (o.ringkas || []).length && (function () {
-        doc.setFontSize(9);
-        const W = doc.internal.pageSize.getWidth(), w = (W - 28) / o.ringkas.length;
-        o.ringkas.forEach((r, i) => {
-          doc.setFillColor(255, 241, 230); doc.roundedRect(14 + i * w, y, w - 3, 15, 2, 2, 'F');
-          doc.setFont('helvetica', 'normal'); doc.setTextColor(91, 98, 112); doc.text(r[0], 17 + i * w, y + 5.5);
-          doc.setFont('helvetica', 'bold'); doc.setTextColor(31, 35, 40); doc.text(r[1], 17 + i * w, y + 11.5);
-        });
-        y += 21;
-      })();
+      const FONT = await R.akt.pasangFont(doc, 'inter');
+      let y = await R.akt.kopPdf(doc, FONT, o.judul, o.sub, o.satuan || '');
+      if ((o.ringkas || []).length) {
+        y = tabelBersih(doc, FONT, { head: [['Ringkasan', '']], body: o.ringkas, angka: [1] }, y, 9) + 6;
+      }
       o.bagian.forEach((b) => {
-        if (b.judul) { if (y > doc.internal.pageSize.getHeight() - 30) { doc.addPage(); y = 18; } doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(31, 35, 40); doc.text(b.judul, 14, y + 2); y += 5; }
-        const angka = b.angka || [];
-        doc.autoTable({
-          startY: y, head: b.head, body: b.body, foot: b.foot, theme: 'grid', margin: { left: 14, right: 14 }, styles: GAYA,
-          headStyles: { fillColor: [31, 35, 40], textColor: 255, fontStyle: 'bold' }, footStyles: { fillColor: [255, 241, 230], textColor: [31, 35, 40], fontStyle: 'bold' },
-          alternateRowStyles: { fillColor: [250, 251, 252] },
-          columnStyles: angka.reduce((m, i) => { m[i] = { halign: 'right' }; return m; }, {}),
-          didParseCell: (d) => { if (d.section !== 'body' || !b.gaya) return; const g = b.gaya(d.row.index); if (g) Object.assign(d.cell.styles, g); }
-        });
-        y = doc.lastAutoTable.finalY + 8;
+        if (b.judul) { if (y > doc.internal.pageSize.getHeight() - 34) { doc.addPage(); y = 20; } doc.setFont(FONT, 'bold'); doc.setFontSize(10); doc.setTextColor(31, 35, 40); doc.text(b.judul, 16, y + 2); y += 5; }
+        y = tabelBersih(doc, FONT, b, y) + 7;
       });
-      if (o.ttd !== false) ttd(doc, y);
-      kaki(doc);
+      if (o.ttd !== false) R.akt.ttdPdf(doc, FONT, y, ttdUsaha());
+      R.akt.kakiPdf(doc, FONT, ((R.boot && R.boot.usaha && R.boot.usaha.nama_usaha) || 'ROVELO') + ' · ' + o.judul);
       doc.save((o.file || o.judul).replace(/[^\w\- ]/g, '_') + '.pdf');
-    },
-    /** Ubah baris laporan {k,label,no,n,p} jadi bagian PDF. */
-    statement(baris, judulKolom, pembanding) {
-      const body = [], gaya = [];
-      baris.forEach((r) => {
-        if (r.k === 'a' && !r.n && !r.p && !r.tampil) return;
-        const lbl = (r.k === 'a' ? '    ' : '') + (r.no ? r.no + '  ' : '') + r.label;
-        body.push([lbl, r.k === 'h' ? '' : R.rp(r.n)].concat(pembanding ? [r.k === 'h' || r.p === null || r.p === undefined ? '' : R.rp(r.p)] : []));
-        gaya.push(r.k === 'h' ? { fontStyle: 'bold', fillColor: [255, 255, 255], textColor: [91, 98, 112] } : r.k === 't' ? { fontStyle: 'bold', fillColor: [255, 241, 230] } : (r.k === 's' || r.k === 'g') ? { fontStyle: 'bold' } : null);
-      });
-      return { head: [['Keterangan', judulKolom || 'Nilai'].concat(pembanding ? [pembanding] : [])], body: body, angka: pembanding ? [1, 2] : [1], gaya: (i) => gaya[i] };
     },
     async slip(d) {
       await R.lib('pdf');
       const doc = pdfBaru('p');
-      (d.karyawan || []).forEach((k, idx) => {
+      const FONT = await R.akt.pasangFont(doc, 'inter');
+      const W = doc.internal.pageSize.getWidth();
+      for (let idx = 0; idx < (d.karyawan || []).length; idx++) {
+        const k = d.karyawan[idx];
         if (idx) doc.addPage();
-        let y = kop(doc, 'SLIP GAJI', 'Periode ' + R.bln(d.periode));
-        const W = doc.internal.pageSize.getWidth();
-        doc.autoTable({ startY: y, theme: 'plain', styles: { fontSize: 9, cellPadding: 1.4 }, margin: { left: 14, right: 14 }, body: [
-          ['Nama', ': ' + k.nama, 'Tanggal bayar', ': ' + R.tglP(d.tanggal_bayar)], ['Jabatan', ': ' + (k.jabatan || '–'), 'ID Karyawan', ': ' + k.id_karyawan],
+        let y = await R.akt.kopPdf(doc, FONT, 'SLIP GAJI', 'Periode ' + R.bln(d.periode), '');
+        doc.autoTable({ startY: y, theme: 'plain', styles: { font: FONT, fontSize: 9, cellPadding: 1.2, textColor: [31, 35, 40] }, margin: { left: 16, right: 16 }, body: [
+          ['Nama', ': ' + k.nama, 'Tanggal bayar', ': ' + R.tglP(k.tanggal_bayar || d.tanggal_bayar)], ['Jabatan', ': ' + (k.jabatan || '–'), 'ID karyawan', ': ' + k.id_karyawan],
           ['Rekening', ': ' + ([k.bank, k.no_rekening].filter(Boolean).join(' ') || '–'), 'Status', ': Dibayar']] });
         y = doc.lastAutoTable.finalY + 4;
         const pend = [['Gaji pokok', k.gaji_pokok], ['Lembur', k.lembur], ['Tunjangan', k.tunjangan], ['Bonus', k.bonus]].filter((x) => +x[1]);
         const pot = [['Potongan absensi', k.potongan_absensi], ['Potongan kasbon', k.potongan_kasbon], ['BPJS (bagian karyawan)', k.potongan_bpjs], ['PPh 21', k.pph21]].filter((x) => +x[1]);
         const baris = Math.max(pend.length, pot.length, 1);
         const body = []; for (let i = 0; i < baris; i++) body.push([pend[i] ? pend[i][0] : '', pend[i] ? R.rp(pend[i][1]) : '', pot[i] ? pot[i][0] : '', pot[i] ? R.rp(pot[i][1]) : '']);
-        doc.autoTable({ startY: y, theme: 'grid', styles: GAYA, margin: { left: 14, right: 14 }, head: [['Pendapatan', '', 'Potongan', '']],
-          headStyles: { fillColor: [31, 35, 40], textColor: 255 }, columnStyles: { 1: { halign: 'right' }, 3: { halign: 'right' } }, body: body,
-          foot: [['Total pendapatan', R.rp(k.total_pendapatan), 'Total potongan', R.rp(k.total_potongan)]], footStyles: { fillColor: [246, 247, 249], textColor: [31, 35, 40], fontStyle: 'bold' } });
-        y = doc.lastAutoTable.finalY + 6;
-        doc.setFillColor(255, 241, 230); doc.roundedRect(14, y, W - 28, 18, 2, 2, 'F');
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(91, 98, 112); doc.text('GAJI BERSIH DITERIMA', 18, y + 6.5);
-        doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(31, 35, 40); doc.text(R.rp(k.gaji_bersih), W - 18, y + 8, { align: 'right' });
-        doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(91, 98, 112); doc.text(R.terbilang(k.gaji_bersih), 18, y + 13.5);
-        if (k.catatan) { doc.setFont('helvetica', 'normal'); doc.text('Catatan: ' + k.catatan, 14, y + 25); }
+        y = tabelBersih(doc, FONT, { head: [['Pendapatan', '', 'Potongan', '']], body: body, angka: [1, 3], foot: [['Total pendapatan', R.rp(k.total_pendapatan), 'Total potongan', R.rp(k.total_potongan)]] }, y, 9) + 6;
+        doc.setDrawColor(31, 35, 40); doc.setLineWidth(0.3); doc.rect(16, y, W - 32, 18);
+        doc.setFont(FONT, 'normal'); doc.setFontSize(9); doc.setTextColor(91, 98, 112); doc.text('GAJI BERSIH DITERIMA', 20, y + 6.5);
+        doc.setFont(FONT, 'bold'); doc.setFontSize(14); doc.setTextColor(31, 35, 40); doc.text(R.rp(k.gaji_bersih), W - 20, y + 8, { align: 'right' });
+        doc.setFont(FONT, 'normal'); doc.setFontSize(8); doc.setTextColor(91, 98, 112); doc.text('Terbilang: ' + R.terbilang(k.gaji_bersih), 20, y + 13.5);
+        if (k.catatan) { doc.text('Catatan: ' + k.catatan, 16, y + 24); }
         y += 30;
-        doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(31, 35, 40);
-        doc.text('Penerima,', 30, y + 6); doc.text(k.nama, 30, y + 28); doc.line(20, y + 24, 70, y + 24);
-        ttd(doc, y - 4);
-      });
-      kaki(doc);
+        const u = ttdUsaha();
+        doc.setFont(FONT, 'normal'); doc.setFontSize(9); doc.setTextColor(31, 35, 40);
+        doc.text('Penerima,', 46, y + 6, { align: 'center' }); doc.line(22, y + 27, 70, y + 27); doc.setFont(FONT, 'bold'); doc.text(k.nama, 46, y + 31.5, { align: 'center' });
+        doc.setFont(FONT, 'normal'); doc.text('Disetujui oleh,', W - 46, y + 6, { align: 'center' }); doc.line(W - 70, y + 27, W - 22, y + 27); doc.setFont(FONT, u.disetujui ? 'bold' : 'normal'); doc.text(u.disetujui || '(nama & tanda tangan)', W - 46, y + 31.5, { align: 'center' });
+      }
+      R.akt.kakiPdf(doc, FONT, ((R.boot && R.boot.usaha && R.boot.usaha.nama_usaha) || 'ROVELO') + ' · Slip gaji');
       doc.save((d.file || 'Slip Gaji ' + R.bln(d.periode)).replace(/[^\w\- ]/g, '_') + '.pdf');
     }
   };

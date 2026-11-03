@@ -138,7 +138,7 @@
   // DETAIL TRANSAKSI
   // ============================================================
   R.detailTransaksi = async function (id) {
-    const d = R.drawer({ judul: 'Detail transaksi', isi: '<div class="sk t"></div><div class="sk l"></div><div class="sk l"></div><div class="sk b mt"></div>' });
+    const d = R.drawer({ judul: 'Detail transaksi', isi: R.loaderMini('Memuat transaksi') });
     try {
       const t = await R.api.get('transaksi.get', { id: id });
       const st = { Draft: 'a', Diposting: 'g', Dibatalkan: 'r' }[t.status] || '';
@@ -196,7 +196,7 @@
         R.tabs(el.querySelector('[data-tabs]'), [{ id: '', label: 'Semua', cnt: d.hitung.Semua }, { id: 'Draft', label: 'Draft', cnt: d.hitung.Draft || 0 }, { id: 'Diposting', label: 'Diposting', cnt: d.hitung.Diposting || 0 }, { id: 'Dibatalkan', label: 'Dibatalkan', cnt: d.hitung.Dibatalkan || 0 }], st.status, (s) => { st.status = s; st.hal = 1; R.ubahQuery({ status: s }); muat(); });
         el.querySelector('[data-tabs]').style.marginBottom = '0';
         const baris = pending.concat(d.baris);
-        R.tabel(listEl, {
+        R.tabel(listEl, { mulai: ((d.halaman || 1) - 1) * (d.per || 0),
           baris: baris, kosong: 'Belum ada transaksi', kosongPesan: 'Catat pemasukan atau pengeluaran pertama Anda.', kosongIkon: 'receipt',
           pilih: OA && st.status === 'Draft', bisaPilih: (t) => t.status === 'Draft',
           onPilih: (rows) => { terpilih = rows; el.querySelector('[data-aksi]').classList.toggle('hidden', !rows.length); el.querySelector('[data-jml]').textContent = rows.length + ' draft dipilih'; },

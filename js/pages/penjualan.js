@@ -41,7 +41,7 @@
         .map((x) => '<div class="sum-box"><div class="xs muted">' + x[0] + '</div><b class="num" style="font-size:16px">' + x[1] + '</b></div>').join('');
       R.tabs(el.querySelector('[data-tabs]'), [{ id: '', label: 'Semua', cnt: d.hitung.Semua }, { id: 'Selesai', label: 'Selesai', cnt: d.hitung.Selesai || 0 }, { id: 'RTS', label: 'RTS', cnt: d.hitung.RTS || 0 }, { id: 'Batal', label: 'Batal', cnt: d.hitung.Batal || 0 }], st.status, (s) => { st.status = s; st.hal = 1; muat(); });
       el.querySelector('[data-tabs]').style.marginBottom = '0';
-      R.tabel(listEl, {
+      R.tabel(listEl, { mulai: ((d.halaman || 1) - 1) * (d.per || 0),
         baris: d.baris, kosong: 'Belum ada penjualan di periode ini', kosongPesan: 'Impor laporan marketplace atau catat penjualan manual.', kosongIkon: 'bag', pilih: OA,
         onPilih: (rows) => { pilih = rows; el.querySelector('[data-aksi]').classList.toggle('hidden', !rows.length); el.querySelector('[data-jml]').textContent = rows.length + ' baris dipilih'; },
         kolom: [
@@ -98,7 +98,7 @@
       '<div class="field"><label>Tanggal</label><input type="date" class="inp" name="tanggal" value="' + v.tanggal + '" max="' + R.hariIni() + '"></div>' +
       '<div class="field"><label>No. pesanan <span class="faint">(opsional)</span></label><input class="inp" name="no_pesanan" maxlength="60" placeholder="otomatis bila kosong"></div>' +
       '<div class="field" data-kontak><label>Pembeli / reseller</label><select class="inp" name="id_kontak"><option value="">— umum —</option>' + (R.boot.kontak || []).map((k) => '<option value="' + k.id + '">' + esc(k.nama) + ' · ' + esc(k.tipe) + '</option>').join('') + '</select></div></div>' +
-      '<h3 class="sec mt-l">Produk</h3><p class="sec-sub">Ketik SKU atau nama. HPP diambil dari Master Produk.</p><div class="item-editor mt" data-items></div><button type="button" class="btn sm" data-tambah>' + R.ic('plus', 's16') + ' Tambah produk</button>' +
+      '<div class="row between wrap mt-l" style="gap:8px"><div><h3 class="sec">Produk</h3><p class="sec-sub">Pilih dari katalog bergambar, atau ketik SKU. HPP & harga diambil dari menu Produk.</p></div><button type="button" class="btn primary sm" data-katalog>' + R.ic('grid', 's16') + ' Pilih dari katalog</button></div><div class="item-editor mt" data-items></div><button type="button" class="btn sm" data-tambah>' + R.ic('plus', 's16') + ' Tambah baris SKU</button>' +
       '<div data-bayar class="mt-l"></div><div class="alert r hidden mt" data-galat></div></form>' +
       '<div><div class="card" style="position:sticky;top:80px"><h3 class="sec">Ringkasan</h3><div class="sum-box mt" data-sum></div><button class="btn primary block mt" data-simpan>' + R.ic('check', 's18') + ' Simpan penjualan</button><p class="xs faint mt">Marketplace: masuk rekap harian & piutang marketplace. Reseller/Manual: langsung ke kas/bank atau piutang.</p></div></div></div>';
     const f = el.querySelector('[data-f]');
@@ -107,14 +107,41 @@
       const box = el.querySelector('[data-items]'); const mp = ch().tipe === 'Marketplace';
       box.innerHTML = v.items.map((it, i) => {
         const p = R.mProd[it.sku];
-        return '<div class="ie-row" data-i="' + i + '"><div class="field"><input class="inp" list="dl-produk" data-k="sku" placeholder="SKU / produk" value="' + esc(it.sku) + '" autocomplete="off"><span class="hint">' + (p ? esc(p.nama + (p.varian ? ' · ' + p.varian : '')) + ' · HPP ' + R.rp(p.hpp) : it.sku ? '<span class="neg">SKU tidak ada di Master Produk</span>' : '&nbsp;') + '</span></div>' +
+        return '<div class="ie-row" data-i="' + i + '">' + R.thumbProduk(it.sku || '_', 42) + '<div class="field"><input class="inp" list="dl-produk" data-k="sku" placeholder="SKU / produk" value="' + esc(it.sku) + '" autocomplete="off"><span class="hint">' + (p ? esc(p.nama + (p.varian ? ' · ' + p.varian : '')) + ' · HPP ' + R.rp(p.hpp) : it.sku ? '<span class="neg">SKU tidak ada di Master Produk</span>' : '&nbsp;') + '</span></div>' +
           '<input class="inp" data-k="qty" type="number" min="1" value="' + it.qty + '" aria-label="Qty">' +
           '<input class="inp" data-k="harga" data-rp inputmode="numeric" placeholder="Harga" value="' + (it.harga ? R.angka(it.harga) : '') + '" aria-label="Harga satuan">' +
           '<input class="inp" data-k="pot" data-rp inputmode="numeric" placeholder="' + (mp ? 'Potongan' : 'Diskon') + '" value="' + (it.pot !== null && it.pot !== undefined ? R.angka(it.pot) : '') + '" aria-label="Potongan" title="' + (mp ? 'Potongan admin marketplace (otomatis dari profil biaya bila kosong)' : 'Diskon') + '">' +
           '<button type="button" class="btn ghost icon" data-hapus aria-label="Hapus" ' + (v.items.length < 2 ? 'disabled' : '') + '>' + R.ic('trash', 's18') + '</button></div>';
       }).join('');
-      R.inpRpSemua(box);
+      R.inpRpSemua(box); R.isiThumb(box);
       ringkas();
+    }
+    /** Katalog bergambar: ketuk produk untuk menambah (ketuk lagi = qty +1). */
+    function katalog() {
+      const semua = (R.boot.produk || []).slice().sort((a, b) => a.nama < b.nama ? -1 : 1);
+      const kats = Array.from(new Set(semua.map((p) => p.kat).filter(Boolean))).sort();
+      let kat = '', q = '';
+      const dr = R.drawer({ judul: 'Pilih produk · ' + (ch().nama || ''), lebar: true, isi: '<div class="inp-group mb"><span class="ic-in">' + R.ic('search', 's16') + '</span><input class="inp" data-q placeholder="Cari nama, varian, atau SKU"></div>' +
+        (kats.length ? '<div class="chips scroll mb"><button class="chip on" data-k="">Semua</button>' + kats.map((k) => '<button class="chip" data-k="' + esc(k) + '">' + esc(k) + '</button>').join('') + '</div>' : '') + '<div data-g></div>',
+        kaki: '<span class="small muted grow" data-jml></span><button class="btn primary" data-x2>Selesai</button>' });
+      const jml = () => { const n = v.items.filter((it) => it.sku).reduce((s2, it) => s2 + it.qty, 0); dr.foot.querySelector('[data-jml]').textContent = n ? n + ' pcs dipilih' : 'Belum ada produk dipilih'; };
+      const gambarK = () => {
+        const L = semua.filter((p) => (!kat || p.kat === kat) && (!q || (p.sku + ' ' + p.nama + ' ' + (p.varian || '')).toLowerCase().indexOf(q) >= 0));
+        dr.body.querySelector('[data-g]').innerHTML = L.length ? '<div class="pk-grid">' + L.slice(0, 240).map((p) => { const it = v.items.find((x) => x.sku === p.sku); return '<button type="button" class="pk-item" data-sku="' + esc(p.sku) + '">' + (it ? '<span class="pk-n">' + it.qty + '</span>' : '') + R.thumbProduk(p.sku, 120) + '<b>' + esc(p.nama) + '</b><span class="xs muted">' + esc(p.varian || p.sku) + '</span><div class="small num" style="margin-top:4px;font-weight:700">' + R.rp(R.hargaProduk(p, ch().id)) + '</div></button>'; }).join('') + '</div>' : R.kosong('Produk tidak ditemukan', 'Tambahkan produk di menu Produk.', 'package');
+        R.isiThumb(dr.body); jml();
+      };
+      dr.body.querySelector('[data-q]').oninput = R.tunda((e) => { q = e.target.value.trim().toLowerCase(); gambarK(); }, 150);
+      R.on(dr.body, 'click', '[data-k]', (e, b) => { kat = b.dataset.k; R.$$('[data-k]', dr.body).forEach((x) => x.classList.toggle('on', x === b)); gambarK(); });
+      R.on(dr.body, 'click', '[data-sku]', (e, b) => {
+        const p = R.mProd[b.dataset.sku]; if (!p) return;
+        let it = v.items.find((x) => x.sku === p.sku);
+        if (it) it.qty++;
+        else { const kosong = v.items.find((x) => !x.sku); it = kosong || { qty: 1, pot: null }; it.sku = p.sku; it.qty = it.qty || 1; it.harga = R.hargaProduk(p, ch().id); it._hargaOto = true; if (!kosong) v.items.push(it); }
+        const n = b.querySelector('.pk-n'); if (n) n.textContent = it.qty; else b.insertAdjacentHTML('afterbegin', '<span class="pk-n">' + it.qty + '</span>');
+        jml(); baris();
+      });
+      dr.foot.querySelector('[data-x2]').onclick = () => dr.tutup();
+      R.fotoProduk(); gambarK();
     }
     function hitung() {
       const mp = ch().tipe === 'Marketplace';
@@ -146,10 +173,12 @@
     }
     f.addEventListener('input', (e) => {
       const r = e.target.closest('[data-i]');
-      if (r) { const it = v.items[+r.dataset.i], k = e.target.dataset.k; if (k === 'sku') { it.sku = e.target.value.trim(); const p = R.mProd[it.sku]; if (p && !it.harga) { it.harga = p.harga; r.querySelector('[data-k=harga]').value = R.angka(p.harga); } const hint = r.querySelector('.hint'); hint.innerHTML = p ? esc(p.nama + (p.varian ? ' · ' + p.varian : '')) + ' · HPP ' + R.rp(p.hpp) : it.sku ? '<span class="neg">SKU tidak ada di Master Produk</span>' : '&nbsp;'; } else if (k === 'qty') it.qty = Math.max(1, +e.target.value || 1); else if (k === 'harga') it.harga = R.nilai(e.target.value); else if (k === 'pot') it.pot = e.target.value.trim() === '' ? null : R.nilai(e.target.value); }
+      if (r) { const it = v.items[+r.dataset.i], k = e.target.dataset.k; if (k === 'sku') { it.sku = e.target.value.trim(); const p = R.mProd[it.sku]; if (p && (!it.harga || it._hargaOto)) { it.harga = R.hargaProduk(p, ch().id); it._hargaOto = true; r.querySelector('[data-k=harga]').value = R.angka(it.harga); } const th = r.querySelector('.p-thumb'); if (th) { th.dataset.thumb = it.sku; th.innerHTML = R.ic('package', 's18'); R.isiThumb(r); } const hint = r.querySelector('.hint'); hint.innerHTML = p ? esc(p.nama + (p.varian ? ' · ' + p.varian : '')) + ' · HPP ' + R.rp(p.hpp) : it.sku ? '<span class="neg">SKU tidak ada di Master Produk</span>' : '&nbsp;'; } else if (k === 'qty') it.qty = Math.max(1, +e.target.value || 1); else if (k === 'harga') { it.harga = R.nilai(e.target.value); it._hargaOto = false; } else if (k === 'pot') it.pot = e.target.value.trim() === '' ? null : R.nilai(e.target.value); }
       ringkas();
     });
-    f.id_channel.onchange = () => { baris(); bayar(); };
+    f.id_channel.onchange = () => { v.items.forEach((it) => { const p = R.mProd[it.sku]; if (p && it._hargaOto) it.harga = R.hargaProduk(p, ch().id); }); baris(); bayar(); };
+    el.querySelector('[data-katalog]').onclick = katalog;
+    R.fotoProduk();
     f.tanggal.onchange = ringkas;
     R.on(el, 'click', '[data-hapus]', (e, b) => { v.items.splice(+b.closest('[data-i]').dataset.i, 1); baris(); });
     el.querySelector('[data-tambah]').onclick = () => { v.items.push({ sku: '', qty: 1, harga: 0, pot: null }); baris(); const r = R.$$('[data-k=sku]', el).pop(); if (r) r.focus(); };
@@ -315,7 +344,7 @@
       }
       function prev() {
         const contoh = isi.slice(0, 5).map((r) => { const o = {}; FIELD.forEach((f) => { const i = S.map[f.k] ? kol(S.map[f.k]) : -1; o[f.k] = i >= 0 ? r[i] : ''; }); return o; });
-        R.tabel(w.querySelector('[data-prev]'), { kartu: false, ringkas: true, baris: contoh, kolom: FIELD.filter((f) => S.map[f.k]).map((f) => ({ k: f.k, label: f.l, render: (r) => esc(r[f.k] instanceof Date ? tanggalID(r[f.k]) : r[f.k]) })) });
+        R.tabel(w.querySelector('[data-prev]'), { no: false, kartu: false, ringkas: true, baris: contoh, kolom: FIELD.filter((f) => S.map[f.k]).map((f) => ({ k: f.k, label: f.l, render: (r) => esc(r[f.k] instanceof Date ? tanggalID(r[f.k]) : r[f.k]) })) });
       }
       stat(); prev();
     }
@@ -438,7 +467,7 @@
       '<div class="field"><label>Masuk ke rekening</label><select class="inp" name="akun_bank">' + R.opsiKas(bank.no) + '</select></div>' +
       '<div class="field"><label>Catatan</label><input class="inp" name="catatan" maxlength="200" placeholder="mis. Penarikan saldo 1–7 Nov"></div>' +
       '<button class="btn primary">' + R.ic('check', 's18') + ' Simpan pencairan</button></div></form>' +
-      '<div><div class="card"><div class="card-head"><div><h3 class="sec">Dana tertahan per channel</h3><p class="sec-sub">Penjualan yang sudah selesai tapi belum ditarik ke bank.</p></div></div><div class="grid g2" data-dana>' + '<div class="sk b"></div>' + '</div></div>' +
+      '<div><div class="card"><div class="card-head"><div><h3 class="sec">Dana tertahan per channel</h3><p class="sec-sub">Penjualan yang sudah selesai tapi belum ditarik ke bank.</p></div></div><div class="grid g2" data-dana>' + R.loaderMini('Menghitung dana') + '</div></div>' +
       '<div class="card p0 mt"><div class="card-head"><h3 class="sec">Riwayat pencairan</h3></div><div data-list>' + R.kerangka(4) + '</div></div></div></div>';
     R.inpRpSemua(el);
     const f = el.querySelector('[data-f]');

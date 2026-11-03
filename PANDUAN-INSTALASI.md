@@ -4,7 +4,7 @@ ROVELO Finance terdiri dari dua bagian:
 
 | Bagian | Isi | Tempatnya |
 |---|---|---|
-| **Backend (server)** | `Kode.gs`, `Setup.gs`, `Akuntansi.gs`, `Modul.gs`, `Lainnya.gs`, `appsscript.json` | Google Apps Script (akun Google Owner) |
+| **Backend (server)** | `Kode.gs`, `Setup.gs`, `Akuntansi.gs`, `Modul.gs`, `Lainnya.gs`, `Laporan.gs`, `appsscript.json` (+ `Demo.gs` opsional) | Google Apps Script (akun Google Owner) |
 | **Frontend (tampilan)** | Isi `finance.zip`: `index.html`, `css/`, `js/` | GitHub Pages → `management-rovelo.my.id/finance/` |
 
 Waktu yang dibutuhkan: ± 30 menit. Kerjakan berurutan.
@@ -23,11 +23,11 @@ Waktu yang dibutuhkan: ± 30 menit. Kerjakan berurutan.
 2. Centang **Show "appsscript.json" manifest file in editor**.
 3. Kembali ke **‹› Editor**, buka `appsscript.json`, hapus semua isinya, tempel isi file `appsscript.json` yang diberikan. Simpan (Ctrl+S).
 
-### A3. Tempel 5 file kode
+### A3. Tempel 6 file kode
 1. File `Code.gs` bawaan: ganti namanya menjadi **Kode** (klik ⋮ → Rename), hapus isinya, tempel isi `Kode.gs`.
 2. Klik **+ → Script** untuk membuat file baru, beri nama **Setup**, tempel isi `Setup.gs`.
-3. Ulangi untuk **Akuntansi**, **Modul**, dan **Lainnya**.
-4. Simpan semua (Ctrl+S). Pastikan ada 5 file `.gs` + `appsscript.json`.
+3. Ulangi untuk **Akuntansi**, **Modul**, **Lainnya**, dan **Laporan**.
+4. Simpan semua (Ctrl+S). Pastikan ada 6 file `.gs` + `appsscript.json`.
 
 > Nama file tidak boleh ada `.gs` dobel. Ketik `Setup`, editor otomatis menambah `.gs`.
 
@@ -198,10 +198,13 @@ Tekan **Ctrl+Shift+R** di browser bila masih tampil versi lama.
 ## Bagian G — Data demo untuk latihan
 
 1. Di Apps Script buat file baru **Demo** (+ → Script), tempel isi `Demo.gs`, simpan.
-2. Pilih fungsi **isiDataDemo** → **▶ Run**. Bila log menulis **JALANKAN LAGI**, klik Run sekali lagi (otomatis melanjutkan).
-3. Selesai bila log menulis **✅ Data demo selesai**. Log juga menampilkan akun latihan `admin.demo`, `staf.demo`, `viewer.demo` beserta kata sandi sementaranya.
-4. Buka aplikasi, tekan **Ctrl+Shift+R**.
+2. Pilih fungsi **isiDataDemo** → **▶ Run** (sekali saja).
+3. Proses butuh **±30–45 menit**. Setiap ±4 menit Google menghentikan proses, lalu proses **lanjut sendiri** semenit kemudian. Anda cukup menunggu.
+4. Untuk melihat kemajuan: pilih fungsi **cekDemo** → **▶ Run**. Log menampilkan persen. Selesai bila tertulis **✅ Data demo sudah lengkap**.
+5. Buka aplikasi, tekan tombol **⟳ Segarkan** di kanan atas.
 
-Isi demo (± 3 bulan terakhir sampai hari ini): 16 produk & HPP, 7 kontak, 4 karyawan, ± 3.000 pesanan Shopee/TikTok/Lazada/Tokopedia + reseller & offline, iklan, operasional, belanja stok tunai & tempo, pencairan dana, piutang & utang, kasbon, gaji 3 bulan, 4 aset (termasuk leasing), sewa dibayar di muka, penyesuaian & PPh Final, 1 bulan terkunci, dan 2 draft Staf untuk latihan posting.
+Isi demo (Januari sampai hari ini): 16 produk lengkap dengan foto, kategori & harga khusus TikTok; 9 kontak; 5 karyawan (2 masuk di pertengahan tahun); ±9.000 pesanan Shopee/TikTok/Lazada/Tokopedia dengan musim ramai (Lebaran Maret, 17 Agustus, 11.11) + reseller, offline & pesanan komunitas; iklan Shopee/TikTok/Meta; operasional lengkap; belanja stok tunai & tempo; pencairan dana; piutang & utang; kasbon; gaji per karyawan (dibayar di tanggal & rekening berbeda) termasuk THR; aset (beli, leasing, jual aset lama); sewa dibayar di muka; tambahan modal & pinjaman bank KUR; penyesuaian, PPh Final, bulan-bulan lama terkunci, dan 2 draft Staf untuk latihan posting.
+
+Log juga menampilkan akun latihan `admin.demo`, `staf.demo`, `viewer.demo` beserta kata sandi sementaranya.
 
 **Sebelum memakai data asli:** jalankan **hapusDataDemo** sekali. Semua transaksi, produk, kontak, karyawan, aset, dan akun `.demo` dihapus. Pengaturan usaha, logo, akun Owner, bagan akun, kategori, dan channel tetap ada. Setelah itu mulai dari **Pembukuan → Saldo awal**.

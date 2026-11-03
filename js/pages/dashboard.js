@@ -12,7 +12,7 @@
       pilihan = pilihan || R.rentang('bulan');
       const jam = +new Date().toLocaleString('en-US', { hour: 'numeric', hour12: false, timeZone: 'Asia/Jakarta' });
       const salam = jam < 11 ? 'Selamat pagi' : jam < 15 ? 'Selamat siang' : jam < 19 ? 'Selamat sore' : 'Selamat malam';
-      el.innerHTML = '<div class="page-head"><div><h2>' + salam + ', ' + esc(u.nama.split(' ')[0]) + '</h2><p data-lbl>' + esc(pilihan.label) + '</p></div><div data-per></div></div><div data-isi>' + R.kerangka(4, 'kartu') + '<div class="grid g-2-1 mt"><div class="card"><div class="sk b"></div></div><div class="card"><div class="sk b"></div></div></div></div>';
+      el.innerHTML = '<div class="page-head"><div><h2>' + salam + ', ' + esc(u.nama.split(' ')[0]) + '</h2><p data-lbl>' + esc(pilihan.label) + '</p></div><div data-per></div></div><div data-isi><div class="card">' + R.loaderMini('Menyiapkan dashboard') + '</div></div>';
       const isi = el.querySelector('[data-isi]');
       const muat = () => {
         el.querySelector('[data-lbl]').textContent = pilihan.label;
@@ -59,15 +59,15 @@
       kartu({ l: 'Laba bersih', v: R.rp(k.laba), ic: 'trend', w: 'g', d: R.delta(k.laba, k.laba_b), f: 'margin ' + R.persen(margin) }) +
       kartu({ l: 'Barang terjual', v: R.angka(k.qty) + ' pcs', ic: 'package', w: 'l', d: R.delta(k.qty, k.qty_b), f: R.angka(k.pesanan) + ' pesanan' }) + '</div>' +
       (d.pengingat && d.pengingat.length ? '<div class="card mt" style="padding:12px 16px"><div class="row wrap" style="gap:8px">' + R.ic('bell', 's18') + '<b class="small">Perlu perhatian</b>' + d.pengingat.slice(0, 4).map((p) => '<a class="badge ' + (p.tipe === 'bahaya' ? 'r' : p.tipe === 'peringatan' ? 'a' : 'b') + '" href="' + esc(p.tautan) + '">' + esc(p.judul) + '</a>').join('') + '</div></div>' : '') +
-      '<div class="grid g-2-1 mt"><div class="card"><div class="card-head"><div><h3 class="sec">Tren omzet, pengeluaran & laba</h3><div class="sec-sub">Per ' + d.tren.satuan + ' · ' + esc(d.periode.label) + '</div></div><div class="legend"><span><i class="ch-dot" style="background:#F97316"></i>Omzet</span><span><i class="ch-dot" style="background:#DC2626"></i>Pengeluaran</span><span><i class="ch-dot" style="background:#16A34A"></i>Laba</span></div></div><div class="chart-box"><canvas data-tren aria-label="Grafik tren"></canvas></div></div>' +
-      '<div class="card"><div class="card-head"><div><h3 class="sec">Ke mana Rp100.000 omzet pergi</h3><div class="sec-sub">Dari setiap Rp100.000 penjualan</div></div></div>' + uang100(d.per100) + '</div></div>' +
+      '<div class="grid g-2-1 mt"><div class="card"><div class="card-head"><div><h3 class="sec">Omzet & laba bersih per ' + d.tren.satuan + '</h3><div class="sec-sub">' + esc(d.periode.label) + ' · batang = omzet, garis = laba bersih</div></div></div><p class="chart-cap" data-cap></p><div class="chart-box"><canvas data-tren aria-label="Grafik omzet dan laba"></canvas></div></div>' +
+      '<div class="card"><div class="card-head"><div><h3 class="sec">Dari setiap Rp100.000 omzet</h3><div class="sec-sub">Dipakai untuk apa saja, dan berapa yang jadi laba</div></div></div>' + uang100(d.per100) + '</div></div>' +
       '<div class="card mt"><div class="card-head"><div><h3 class="sec">Kinerja per channel</h3><div class="sec-sub">Omzet, qty, laba setelah potongan & iklan, tingkat RTS</div></div><a class="small" href="#/laporan-penjualan">Laporan penjualan</a></div><div class="grid g3" data-ch></div></div>' +
       '<div class="grid g-1-2 mt"><div class="card"><div class="card-head"><h3 class="sec">Produk terlaris</h3><div data-tp></div></div><div data-tpl></div></div>' +
       '<div class="grid g2"><div class="card"><div class="card-head"><h3 class="sec">Kas & bank</h3><b class="num">' + R.rp(totKas) + '</b></div>' + (d.kas || []).filter((x) => x.saldo).map((x) => '<div class="list-row"><span class="lr-ic">' + R.ic(/Bank/.test(x.nama) ? 'landmark' : 'wallet', 's18') + '</span><span class="lr-main"><b>' + esc(x.nama) + '</b><small>' + x.no + '</small></span><span class="num" style="font-weight:600">' + R.rp(x.saldo) + '</span></div>').join('') + (!(d.kas || []).some((x) => x.saldo) ? R.kosong('Belum ada saldo', 'Isi saldo awal di Pembukuan.', 'wallet') : '') + '</div>' +
       '<div class="card"><div class="card-head"><h3 class="sec">Dana marketplace tertahan</h3><b class="num">' + R.rp(totDana) + '</b></div>' + (d.danaTertahan || []).map((x) => '<div class="list-row"><span class="lr-main">' + R.chTag(x.id_channel) + '<small style="display:block">' + (x.saldo > 0 ? 'tertahan ' + x.umur + ' hari' : 'tidak ada dana tertahan') + '</small></span><span class="num ' + (x.umur > 14 && x.saldo > 0 ? 'warn' : '') + '" style="font-weight:600">' + R.rp(x.saldo) + '</span></div>').join('') +
       '<hr class="divider"><div class="kv"><dt>Piutang belum dibayar</dt><dd>' + R.rp(pu.piutang) + '</dd><dt>Utang belum dibayar</dt><dd class="' + (pu.utang_lewat ? 'neg' : '') + '">' + R.rp(pu.utang) + '</dd></div><a class="btn sm block mt" href="#/piutang">Kelola piutang & utang</a></div></div></div>' +
-      '<div class="grid g-2-1 mt"><div class="card"><div class="card-head"><div><h3 class="sec">Rekap keuangan tahunan</h3><div class="sec-sub">Januari – Desember</div></div><select class="inp sm" data-th style="width:auto" aria-label="Tahun rekap"></select></div><div class="chart-box"><canvas data-rekap aria-label="Grafik rekap tahunan"></canvas></div></div>' +
-      '<div class="card"><div class="card-head"><h3 class="sec">Pengeluaran per kelompok</h3></div>' + kelompok(d.pengeluaranKelompok) + '</div></div>' +
+      '<div class="grid g-2-1 mt"><div class="card"><div class="card-head"><div><h3 class="sec">Omzet & laba bersih per bulan</h3><div class="sec-sub">Januari – Desember · angka di atas batang hijau = laba bersih</div></div><select class="inp sm" data-th style="width:auto" aria-label="Tahun rekap"></select></div><p class="chart-cap" data-cap2></p><div class="chart-box"><canvas data-rekap aria-label="Grafik omzet dan laba per bulan"></canvas></div></div>' +
+      '<div class="card"><div class="card-head"><div><h3 class="sec">Pengeluaran per kelompok</h3><div class="sec-sub">' + esc(d.periode.label) + '</div></div></div>' + kelompok(d.pengeluaranKelompok) + '</div></div>' +
       '<div class="card mt"><div class="card-head"><h3 class="sec">Transaksi terbaru</h3><a class="small" href="#/transaksi">Lihat semua</a></div>' + terbaru(d) + '</div>';
 
     // channel
@@ -87,14 +87,16 @@
     R.seg(el.querySelector('[data-tp]'), [{ v: 'qty', l: 'Qty' }, { v: 'omzet', l: 'Omzet' }], mode, (v) => { mode = v; tp(); });
     tp();
 
-    // grafik tren
-    const labels = d.tren.data.map((x) => d.tren.satuan === 'hari' ? +x.label.slice(8) + ' ' + R.BULAN[+x.label.slice(5, 7) - 1].slice(0, 3) : R.BULAN[+x.label.slice(5, 7) - 1].slice(0, 3) + ' ' + x.label.slice(2, 4));
+    // grafik tren: batang omzet + garis laba (satu sumbu Rupiah)
+    const bulanan = d.tren.satuan !== 'hari';
+    const labels = d.tren.data.map((x) => bulanan ? R.BULAN[+x.label.slice(5, 7) - 1].slice(0, 3) + ' ' + x.label.slice(0, 4) : +x.label.slice(8) + ' ' + R.BULAN[+x.label.slice(5, 7) - 1].slice(0, 3));
+    const terbaik = d.tren.data.reduce((m, x, i) => x.omzet > (m ? m.x.omzet : -1) ? { x: x, i: i } : m, null);
+    el.querySelector('[data-cap]').innerHTML = 'Omzet <b>' + R.rp(k.omzet) + '</b>, laba bersih <b class="' + (k.laba < 0 ? 'neg' : '') + '">' + R.rp(k.laba) + '</b> (margin ' + R.persen(margin) + ').' + (terbaik && terbaik.x.omzet ? ' Omzet tertinggi pada <b>' + labels[terbaik.i] + '</b>: ' + R.rp(terbaik.x.omzet) + '.' : '');
     R.grafik(el.querySelector('[data-tren]'), {
-      type: 'line', data: { labels: labels, datasets: [
-        { label: 'Omzet', data: d.tren.data.map((x) => x.omzet), borderColor: '#F97316', borderWidth: 2.4, tension: .38, pointRadius: 0, pointHoverRadius: 4, fill: true, backgroundColor: (c) => R.gradien(c.chart.ctx, c.chart.chartArea, '#F97316') },
-        { label: 'Pengeluaran', data: d.tren.data.map((x) => x.pengeluaran), borderColor: '#DC2626', borderWidth: 1.8, tension: .38, pointRadius: 0, borderDash: [4, 4] },
-        { label: 'Laba', data: d.tren.data.map((x) => x.laba), borderColor: '#16A34A', borderWidth: 2, tension: .38, pointRadius: 0, fill: true, backgroundColor: (c) => R.gradien(c.chart.ctx, c.chart.chartArea, '#16A34A', '22') }
-      ] }
+      type: 'bar', data: { labels: labels, datasets: [
+        { type: 'line', label: 'Laba bersih', data: d.tren.data.map((x) => x.laba), borderColor: '#16A34A', backgroundColor: '#16A34A', borderWidth: 2, pointRadius: d.tren.data.length > 20 ? 0 : 3, pointHoverRadius: 5, order: 0 },
+        { label: 'Omzet', data: d.tren.data.map((x) => x.omzet), backgroundColor: '#FB923C', hoverBackgroundColor: '#F97316', maxBarThickness: 26, order: 1 }
+      ] }, labelNilai: d.tren.data.length <= 8 ? [1] : []
     }).catch(() => {});
 
     // rekap tahunan
@@ -102,12 +104,14 @@
     sel.innerHTML = Array.from({ length: 11 }, (_, i) => thIni - 5 + i).map((y) => '<option ' + (y === +d.periode.sampai.slice(0, 4) ? 'selected' : '') + '>' + y + '</option>').join('');
     const rekap = () => R.api.swr('laporan.rekap', { mode: '12bulan', tahun: +sel.value }, (r) => {
       if (!R.masihDi(nav)) return;
+      const isi2 = r.kolom.filter((x) => x.omzet);
+      const top = isi2.slice().sort((a, b) => b.omzet - a.omzet)[0];
+      el.querySelector('[data-cap2]').innerHTML = isi2.length ? 'Tahun ' + r.tahun + ': omzet <b>' + R.rp(r.total.omzet) + '</b>, laba bersih <b class="' + (r.total.laba_bersih < 0 ? 'neg' : '') + '">' + R.rp(r.total.laba_bersih) + '</b> (margin ' + R.persen(r.total.margin) + '). Bulan terbaik: <b>' + R.BULAN[+top.kunci.slice(5) - 1] + '</b>.' : 'Belum ada data di tahun ' + r.tahun + '.';
       R.grafik(el.querySelector('[data-rekap]'), {
-        type: 'bar', data: { labels: r.kolom.map((k) => k.label), datasets: [
-          { type: 'line', label: 'Laba bersih', data: r.kolom.map((k) => k.laba_bersih), borderColor: '#16A34A', backgroundColor: '#16A34A', borderWidth: 2, tension: .35, pointRadius: 2.5, order: 0 },
-          { label: 'Omzet', data: r.kolom.map((k) => k.omzet), backgroundColor: (c) => R.gradien(c.chart.ctx, c.chart.chartArea, '#FB923C', 'CC'), borderRadius: 8, maxBarThickness: 28, order: 1 },
-          { label: 'Pengeluaran', data: r.kolom.map((k) => k.pengeluaran), backgroundColor: '#E5E7EB', borderRadius: 8, maxBarThickness: 28, order: 2 }
-        ] }
+        type: 'bar', data: { labels: r.kolom.map((x) => x.label), datasets: [
+          { label: 'Omzet', data: r.kolom.map((x) => x.omzet), backgroundColor: '#FB923C', hoverBackgroundColor: '#F97316', maxBarThickness: 22 },
+          { label: 'Laba bersih', data: r.kolom.map((x) => x.laba_bersih), backgroundColor: '#16A34A', maxBarThickness: 22 }
+        ] }, labelNilai: [1], options: { datasets: { bar: { categoryPercentage: 0.7, barPercentage: 0.9 } } }
       }).catch(() => {});
     }, { simpan: true }).catch(() => {});
     sel.onchange = rekap; rekap();
@@ -115,14 +119,10 @@
 
   function uang100(list) {
     if (!list || !list.length) return R.kosong('Belum ada omzet', 'Rincian muncul setelah ada penjualan.', 'pie');
-    const warna = ['#94A3B8', '#FB923C', '#A79BFF', '#F97316', '#2563EB', '#CBD5E1', '#16A34A'];
-    const pos = list.map((x) => Math.max(0, x.n));
-    return '<div class="money-flow">' + list.map((x, i) => '<i style="width:' + (pos[i] / 1000) + '%;background:' + (x.laba ? (x.n < 0 ? '#DC2626' : '#16A34A') : warna[i % warna.length]) + '" title="' + esc(x.label) + '"></i>').join('') + '</div><div class="stack mt">' +
-      list.map((x, i) => '<div class="row between small"><span class="row" style="gap:8px"><i class="ch-dot" style="background:' + (x.laba ? (x.n < 0 ? '#DC2626' : '#16A34A') : warna[i % warna.length]) + '"></i>' + esc(x.label) + '</span><b class="num ' + (x.laba ? (x.n < 0 ? 'neg' : 'pos') : '') + '">' + R.rp(x.n) + '</b></div>').join('') + '</div>';
+    return R.batangList(list.map((x) => ({ label: x.laba ? (x.n < 0 ? 'Rugi bersih' : 'Laba bersih (sisa untuk Anda)') : x.label, n: x.n, warna: x.laba ? (x.n < 0 ? '#DC2626' : '#16A34A') : '#94A3B8', sorot: x.laba })), { total: 100000 });
   }
   function kelompok(list) {
     if (!list || !list.length) return R.kosong('Belum ada pengeluaran', '', 'receipt');
-    const tot = list.reduce((s, x) => s + Math.max(0, x.n), 0) || 1;
-    return list.slice().sort((a, b) => b.n - a.n).map((x) => '<div style="margin-bottom:12px"><div class="row between small"><span>' + esc(x.label) + '</span><b class="num">' + R.rpK(x.n) + ' <span class="faint">· ' + R.persen(x.n / tot * 100) + '</span></b></div><div class="bar mt" style="margin-top:6px"><i style="width:' + Math.max(2, x.n / tot * 100) + '%"></i></div></div>').join('');
+    return R.batangList(list.slice().sort((a, b) => b.n - a.n).map((x) => ({ label: x.label, n: x.n, warna: '#FB923C' })));
   }
 })();

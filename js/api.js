@@ -129,6 +129,8 @@
 
   R.api = {
     call: call, get: get, swr: swr, uid: uid, hapusCache: hapusCache,
+    /** Tandai semua data tersimpan sebagai lama → halaman berikutnya pasti mengambil ulang dari server. */
+    segarkan() { setelahTulis(); LS.keys().forEach((k) => { if (k.indexOf(K_CACHE) === 0) { const v = LS.get(k); if (v && v.s) { v.s = '~' + v.s; LS.set(k, v); } } }); },
     onStatus(f) { pendengar.add(f); return () => pendengar.delete(f); },
     get sesi() { return sesi; },
     simpanSesi(s) { sesi = s; LS.set(K_SESI, s); },

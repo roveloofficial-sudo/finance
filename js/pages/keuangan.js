@@ -13,7 +13,7 @@
     render(el, q, sub, nav) {
       if (q.tab === 'utang') sp.tab = 'Utang'; else if (q.tab === 'dana') sp.tab = 'Dana'; else if (q.tab === 'piutang') sp.tab = 'Piutang';
       const OA = R.isOA();
-      el.innerHTML = '<div class="page-head"><div><h2>Piutang & utang</h2><p>Siapa yang masih berutang ke ROVELO, dan tagihan yang harus dibayar.</p></div>' + (OA ? '<div class="actions"><button class="btn primary" data-tbh>' + R.ic('plus', 's18') + ' Tambah catatan</button></div>' : '') + '</div><div class="grid g4 keep2 mb" data-ring>' + R.kerangka(4, 'kartu').replace('<div class="grid g4">', '').slice(0, -6) + '</div><div data-tabs></div><div data-isi></div>';
+      el.innerHTML = '<div class="page-head"><div><h2>Piutang & utang</h2><p>Siapa yang masih berutang ke ROVELO, dan tagihan yang harus dibayar.</p></div>' + (OA ? '<div class="actions"><button class="btn primary" data-tbh>' + R.ic('plus', 's18') + ' Tambah catatan</button></div>' : '') + '</div><div class="grid g4 keep2 mb" data-ring><div class="card" style="grid-column:1/-1">' + R.loaderMini('Memuat piutang & utang') + '</div></div><div data-tabs></div><div data-isi></div>';
       const isi = el.querySelector('[data-isi]');
       let data = null;
       const gambar = () => {
@@ -107,52 +107,87 @@
     el.querySelector('#pg').onchange = (e) => { if (e.target.value) { sg.periode = e.target.value; muat(); } };
     let d = null;
     const hitung = (x) => { FG.forEach((f) => { x[f] = Math.max(0, +x[f] || 0); }); x.total_pendapatan = x.gaji_pokok + x.lembur + x.tunjangan + x.bonus; x.total_potongan = x.potongan_absensi + x.potongan_kasbon + x.potongan_bpjs + x.pph21; x.gaji_bersih = x.total_pendapatan - x.total_potongan; return x; };
+    let centang = new Set();
+    const sudah = (x) => x.status === 'Dibayar';
     function gambar() {
-      const g = d.gaji, bisa = g.status !== 'Dibayar';
-      el.querySelector('[data-st]').innerHTML = '<span class="badge ' + ({ Dibayar: 'g', Draft: 'a', Baru: 'b' }[g.status] || '') + '">' + esc(g.status === 'Baru' ? 'Belum diproses' : g.status) + '</span>' + (g.tanggal_bayar ? ' <span class="small muted">dibayar ' + R.tgl(g.tanggal_bayar) + '</span>' : '');
-      el.querySelector('[data-akt]').innerHTML = bisa ? (d.tersimpan ? '<button class="btn ghost" data-batal>' + R.ic('trash', 's16') + ' Batalkan</button>' : '') + '<button class="btn" data-simpan>Simpan draft</button><button class="btn primary" data-bayar>' + R.ic('cash', 's18') + ' Bayar gaji</button>'
-        : '<button class="btn" data-batal>' + R.ic('undo', 's16') + ' Batalkan pembayaran</button><button class="btn primary" data-slip>' + R.ic('download', 's18') + ' Unduh semua slip</button>';
+      const g = d.gaji;
+      const nBayar = d.detail.filter(sudah).length, nAda = d.detail.filter((x) => x.total_pendapatan > 0 || !d.tersimpan).length;
+      const semuaBayar = g.status === 'Dibayar';
+      el.querySelector('[data-st]').innerHTML = '<span class="badge ' + ({ Dibayar: 'g', Sebagian: 'o', Draft: 'a', Baru: 'b' }[g.status] || '') + '">' + esc(g.status === 'Baru' ? 'Belum diproses' : g.status === 'Sebagian' ? 'Dibayar sebagian' : g.status) + '</span>' + (d.tersimpan ? ' <span class="small muted">' + nBayar + ' dari ' + nAda + ' karyawan sudah dibayar</span>' : '');
+      el.querySelector('[data-akt]').innerHTML = (d.tersimpan && !nBayar ? '<button class="btn ghost" data-batal>' + R.ic('trash', 's16') + ' Hapus draft</button>' : '') +
+        (!semuaBayar ? '<button class="btn" data-simpan>Simpan draft</button><button class="btn primary" data-bayar disabled>' + R.ic('cash', 's18') + ' Bayar yang dicentang</button>' : '') +
+        (nBayar ? '<button class="btn" data-slip>' + R.ic('download', 's18') + ' Slip yang sudah dibayar</button>' : '');
       const box = el.querySelector('[data-tbl]');
       if (!d.detail.length) { box.innerHTML = R.kosong('Belum ada karyawan aktif', 'Tambahkan karyawan dulu.', 'users'); return; }
-      d.detail.forEach(hitung);
-      const tot = {}; FG.concat(['gaji_bersih']).forEach((f) => { tot[f] = d.detail.reduce((s, x) => s + x[f], 0); });
-      box.innerHTML = '<div class="tbl-wrap"><table class="tbl compact"><thead><tr><th>Karyawan</th>' + FG.map((f) => '<th class="n">' + LG[f] + '</th>').join('') + '<th class="n">Diterima</th><th></th></tr></thead><tbody>' +
-        d.detail.map((x, i) => '<tr data-i="' + i + '"><td><b>' + esc(x.nama) + '</b><span class="t2">' + esc(x.jabatan) + (x.saldo_kasbon ? ' · kasbon ' + R.rp(x.saldo_kasbon) : '') + '</span></td>' +
-          FG.map((f) => '<td class="n">' + (bisa ? '<input class="inline-in" data-f="' + f + '" data-rp inputmode="numeric" value="' + (x[f] ? R.angka(x[f]) : '') + '" placeholder="0" aria-label="' + LG[f] + ' ' + esc(x.nama) + '">' : R.rp(x[f])) + '</td>').join('') +
-          '<td class="n"><b data-bersih>' + R.rp(x.gaji_bersih) + '</b></td><td>' + (!bisa ? '<button class="btn xs" data-slip1="' + i + '">' + R.ic('download', 's16') + ' Slip</button>' : '') + '</td></tr>').join('') +
-        '</tbody><tfoot><tr><td>Total ' + d.detail.length + ' orang</td>' + FG.map((f) => '<td class="n" data-t="' + f + '">' + R.rp(tot[f]) + '</td>').join('') + '<td class="n" data-t="gaji_bersih">' + R.rp(tot.gaji_bersih) + '</td><td></td></tr></tfoot></table></div>' +
-        '<p class="xs faint mt">Gaji pokok & tunjangan diambil dari data karyawan. Potongan kasbon maksimal sebesar sisa kasbon. Jurnal: Beban gaji (D) — Kas/Bank, Utang PPh 21, Utang BPJS, Piutang karyawan (K).</p>';
+      d.detail.forEach((x) => { if (!sudah(x)) hitung(x); });
+      centang = new Set(Array.from(centang).filter((i) => d.detail[i] && !sudah(d.detail[i])));
+      const tot = {}; FG.concat(['gaji_bersih']).forEach((f) => { tot[f] = d.detail.reduce((s2, x) => s2 + (+x[f] || 0), 0); });
+      box.innerHTML = '<div class="alert mb">' + R.ic('info', 's18') + '<span>Centang karyawan yang akan dibayar, lalu tekan <b>Bayar yang dicentang</b>. Tiap karyawan bisa dibayar di tanggal & rekening berbeda, dan dibatalkan satu per satu.</span></div>' +
+        '<div class="tbl-wrap"><table class="tbl compact gaji"><thead><tr><th style="width:34px"><input type="checkbox" data-all aria-label="Centang semua yang belum dibayar"></th><th class="no">No</th><th>Karyawan</th>' + FG.map((f) => '<th class="n">' + LG[f] + '</th>').join('') + '<th class="n">Diterima</th><th>Status</th><th></th></tr></thead><tbody>' +
+        d.detail.map((x, i) => {
+          const ok = sudah(x), kosong = d.tersimpan && !(x.total_pendapatan > 0) && !ok;
+          return '<tr data-i="' + i + '" class="' + (ok ? 'lunas' : '') + (centang.has(i) ? ' sel' : '') + '"><td>' + (ok || kosong ? '' : '<input type="checkbox" data-pick ' + (centang.has(i) ? 'checked' : '') + ' aria-label="Centang ' + esc(x.nama) + '">') + '</td><td class="no">' + (i + 1) + '</td>' +
+            '<td><b>' + esc(x.nama) + '</b><span class="t2">' + esc(x.jabatan) + (x.saldo_kasbon ? ' · kasbon ' + R.rp(x.saldo_kasbon) : '') + '</span></td>' +
+            FG.map((f) => '<td class="n">' + (!ok ? '<input class="inline-in" data-f="' + f + '" data-rp inputmode="numeric" value="' + (x[f] ? R.angka(x[f]) : '') + '" placeholder="0" aria-label="' + LG[f] + ' ' + esc(x.nama) + '">' : R.rp(x[f])) + '</td>').join('') +
+            '<td class="n"><b data-bersih>' + R.rp(x.gaji_bersih) + '</b></td>' +
+            '<td>' + (ok ? '<span class="badge g">' + R.ic('check', 's16') + ' Dibayar</span><span class="t2">' + R.tgl(x.tanggal_bayar) + ' · ' + esc(R.namaAkun(x.akun_kas)) + '</span>' : kosong ? '<span class="badge">Tidak diproses</span>' : '<span class="badge a">Belum dibayar</span>') + '</td>' +
+            '<td class="nowrap">' + (ok ? '<button class="btn xs" data-slip1="' + i + '">' + R.ic('download', 's16') + ' Slip</button> <button class="btn xs ghost" data-batal1="' + i + '" title="Batalkan pembayaran">' + R.ic('undo', 's16') + '</button>' : '') + '</td></tr>';
+        }).join('') +
+        '</tbody><tfoot><tr><td></td><td></td><td>Total ' + d.detail.length + ' orang</td>' + FG.map((f) => '<td class="n" data-t="' + f + '">' + R.rp(tot[f]) + '</td>').join('') + '<td class="n" data-t="gaji_bersih">' + R.rp(tot.gaji_bersih) + '</td><td></td><td></td></tr></tfoot></table></div>' +
+        '<div class="row between wrap mt" style="gap:8px"><span class="small" data-pilih></span><span class="xs faint">Jurnal per karyawan: Beban gaji (D) — Kas/Bank, Utang PPh 21, Utang BPJS, Piutang karyawan (K).</span></div>';
       R.inpRpSemua(box);
+      perbaruiPilih();
       box.oninput = (e) => {
-        const tr = e.target.closest('[data-i]'); if (!tr) return;
+        const tr = e.target.closest('[data-i]'); if (!tr || !e.target.dataset.f) return;
         const x = d.detail[+tr.dataset.i]; x[e.target.dataset.f] = R.nilai(e.target.value); hitung(x);
         tr.querySelector('[data-bersih]').textContent = R.rp(x.gaji_bersih); tr.querySelector('[data-bersih]').classList.toggle('neg', x.gaji_bersih < 0);
-        FG.concat(['gaji_bersih']).forEach((f) => { box.querySelector('[data-t=' + f + ']').textContent = R.rp(d.detail.reduce((s, y) => s + y[f], 0)); });
+        FG.concat(['gaji_bersih']).forEach((f) => { box.querySelector('[data-t=' + f + ']').textContent = R.rp(d.detail.reduce((s2, y) => s2 + (+y[f] || 0), 0)); });
+        perbaruiPilih();
+      };
+      box.onchange = (e) => {
+        if (e.target.matches('[data-pick]')) { const i = +e.target.closest('[data-i]').dataset.i; e.target.checked ? centang.add(i) : centang.delete(i); e.target.closest('tr').classList.toggle('sel', e.target.checked); perbaruiPilih(); }
+        if (e.target.matches('[data-all]')) { R.$$('[data-pick]', box).forEach((c) => { c.checked = e.target.checked; const i = +c.closest('[data-i]').dataset.i; e.target.checked ? centang.add(i) : centang.delete(i); c.closest('tr').classList.toggle('sel', e.target.checked); }); perbaruiPilih(); }
       };
     }
-    async function simpan() { const r = await R.api.call('gaji.prosesSave', { periode: sg.periode, detail: d.detail }); d.tersimpan = true; d.gaji.status = 'Draft'; return r; }
-    R.on(el, 'click', '[data-simpan]', async (e, b) => { b.classList.add('busy'); try { const r = await simpan(); R.toast(r._pesan); gambar(); } catch (ex) { R.galat(ex); } finally { b.classList.remove('busy'); } });
+    function perbaruiPilih() {
+      const L = Array.from(centang).map((i) => d.detail[i]);
+      const t = L.reduce((s2, x) => s2 + x.gaji_bersih, 0);
+      const info = el.querySelector('[data-pilih]'); if (info) info.innerHTML = L.length ? '<b>' + L.length + ' karyawan dicentang</b> · total ' + R.rp(t) : '<span class="muted">Belum ada karyawan dicentang.</span>';
+      const b = el.querySelector('[data-bayar]'); if (b) { b.disabled = !L.length; b.innerHTML = R.ic('cash', 's18') + (L.length ? ' Bayar ' + L.length + ' karyawan' : ' Bayar yang dicentang'); }
+    }
+    async function simpan() { const r = await R.api.call('gaji.prosesSave', { periode: sg.periode, detail: d.detail.filter((x) => !sudah(x)) }); d.tersimpan = true; return r; }
+    R.on(el, 'click', '[data-simpan]', async (e, b) => { b.classList.add('busy'); try { const r = await simpan(); R.toast(r._pesan); muat(); } catch (ex) { R.galat(ex); } finally { b.classList.remove('busy'); } });
     R.on(el, 'click', '[data-bayar]', () => {
-      const tot = d.detail.reduce((s, x) => s + x.gaji_bersih, 0);
-      const dr = R.drawer({ judul: 'Bayar gaji ' + R.bln(sg.periode), isi: '<div class="card tint flat"><div class="small muted">Total gaji bersih dibayar</div><div class="num" style="font-size:26px;font-weight:800">' + R.rp(tot) + '</div><div class="small muted">' + d.detail.length + ' karyawan</div></div><form class="stack mt"><div class="field"><label>Tanggal bayar</label><input type="date" class="inp" name="tanggal" value="' + R.hariIni() + '"></div><div class="field"><label>Dibayar dari</label><select class="inp" name="akun_kas">' + R.opsiKas((R.akunKas().find((a) => /Bank/.test(a.nama)) || {}).no) + '</select></div></form>',
+      const L = Array.from(centang).map((i) => d.detail[i]);
+      if (!L.length) return R.toast('Centang dulu karyawan yang akan dibayar.', 'err');
+      const tot = L.reduce((s2, x) => s2 + x.gaji_bersih, 0);
+      const dr = R.drawer({ judul: 'Bayar gaji ' + R.bln(sg.periode), isi: '<div class="card tint flat"><div class="small muted">Total gaji bersih dibayar</div><div class="num" style="font-size:26px;font-weight:800">' + R.rp(tot) + '</div><div class="small muted">' + L.length + ' karyawan</div></div>' +
+        '<ol class="small mt" style="padding-left:20px;line-height:1.9">' + L.map((x) => '<li><b>' + esc(x.nama) + '</b> — ' + R.rp(x.gaji_bersih) + '</li>').join('') + '</ol>' +
+        '<form class="stack mt"><div class="field"><label>Tanggal bayar</label><input type="date" class="inp" name="tanggal" value="' + R.hariIni() + '"></div><div class="field"><label>Dibayar dari</label><select class="inp" name="akun_kas">' + R.opsiKas((R.akunKas().find((a) => /Bank/.test(a.nama)) || {}).no) + '</select></div></form>',
         kaki: '<button class="btn ghost" data-x2>Batal</button><button class="btn primary" data-ok>Bayar & catat jurnal</button>' });
       dr.foot.querySelector('[data-x2]').onclick = () => dr.tutup();
       dr.foot.querySelector('[data-ok]').onclick = async (e) => {
         const f = dr.body.querySelector('form'), b = e.currentTarget; b.classList.add('busy');
-        try { await simpan(); const r = await R.api.call('gaji.bayar', { periode: sg.periode, tanggal: f.tanggal.value, akun_kas: f.akun_kas.value }); R.toast(r._pesan); dr.tutup(); muat(); }
+        try { await simpan(); const r = await R.api.call('gaji.bayar', { periode: sg.periode, tanggal: f.tanggal.value, akun_kas: f.akun_kas.value, ids: L.map((x) => x.id_karyawan) }); R.toast(r._pesan); dr.tutup(); centang.clear(); muat(); }
         catch (ex) { R.galat(ex); b.classList.remove('busy'); }
       };
     });
     R.on(el, 'click', '[data-batal]', async () => {
-      const a = await R.konfirmasi({ judul: 'Batalkan proses gaji ' + R.bln(sg.periode) + '?', pesan: d.gaji.status === 'Dibayar' ? 'Jurnal pembayaran gaji akan dibalik (JB).' : 'Draft gaji dihapus.', bahaya: true, ok: 'Batalkan', input: { label: 'Alasan', wajib: true } });
+      const a = await R.konfirmasi({ judul: 'Hapus draft gaji ' + R.bln(sg.periode) + '?', pesan: 'Draft gaji periode ini dihapus. Anda bisa memprosesnya lagi dari awal.', bahaya: true, ok: 'Hapus draft', input: { label: 'Alasan', wajib: true } });
       if (!a) return;
       try { const r = await R.api.call('gaji.batal', { periode: sg.periode, alasan: a }); R.toast(r._pesan); muat(); } catch (ex) { R.galat(ex); }
+    });
+    R.on(el, 'click', '[data-batal1]', async (e, b) => {
+      const x = d.detail[+b.dataset.batal1];
+      const a = await R.konfirmasi({ judul: 'Batalkan pembayaran gaji ' + x.nama + '?', pesan: 'Jurnal pembayaran ' + x.nama + ' (' + R.rp(x.gaji_bersih) + ') dibalik, statusnya kembali "Belum dibayar".', bahaya: true, ok: 'Batalkan pembayaran', input: { label: 'Alasan', wajib: true } });
+      if (!a) return;
+      try { const r = await R.api.call('gaji.batal', { periode: sg.periode, id_karyawan: x.id_karyawan, alasan: a }); R.toast(r._pesan); muat(); } catch (ex) { R.galat(ex); }
     });
     const slip = (list) => R.api.get('gaji.karyawanList', {}).then((ks) => {
       const m = {}; ks.forEach((k) => { m[k.id_karyawan] = k; });
       return R.pdf.slip({ periode: sg.periode, tanggal_bayar: d.gaji.tanggal_bayar, karyawan: list.map((x) => Object.assign({ bank: (m[x.id_karyawan] || {}).bank, no_rekening: (m[x.id_karyawan] || {}).no_rekening }, x)), file: list.length === 1 ? 'Slip Gaji ' + list[0].nama + ' ' + sg.periode : 'Slip Gaji ' + sg.periode });
     }).catch(R.galat);
-    R.on(el, 'click', '[data-slip]', () => slip(d.detail.filter((x) => x.total_pendapatan > 0)));
+    R.on(el, 'click', '[data-slip]', () => slip(d.detail.filter(sudah)));
     R.on(el, 'click', '[data-slip1]', (e, b) => slip([d.detail[+b.dataset.slip1]]));
     function muat() {
       el.querySelector('[data-tbl]').innerHTML = R.kerangka(5);
@@ -197,9 +232,9 @@
     R.api.swr('gaji.riwayat', {}, (d) => {
       if (!R.masihDi(nav)) return;
       R.tabel(el.querySelector('[data-list]'), { baris: d, kosong: 'Belum ada riwayat gaji', kosongIkon: 'history', klik: (g) => { sg.periode = g.periode; buka('proses'); }, kolom: [
-        { k: 'label', label: 'Periode', lead: true }, { k: 'status', label: 'Status', render: (g) => '<span class="badge ' + ({ Dibayar: 'g', Draft: 'a', Dibatalkan: 'r' }[g.status] || '') + '">' + esc(g.status) + '</span>' },
+        { k: 'label', label: 'Periode', lead: true }, { k: 'status', label: 'Status', render: (g) => '<span class="badge ' + ({ Dibayar: 'g', Sebagian: 'o', Draft: 'a', Dibatalkan: 'r' }[g.status] || '') + '">' + esc(g.status === 'Sebagian' ? 'Dibayar ' + g.jumlah_dibayar + '/' + g.jumlah_karyawan : g.status) + '</span>' },
         { k: 'jumlah_karyawan', label: 'Karyawan', tipe: 'angka' }, { k: 'total_pendapatan', label: 'Pendapatan', tipe: 'rp', hideM: true }, { k: 'total_potongan', label: 'Potongan', tipe: 'rp', hideM: true },
-        { k: 'total_bersih', label: 'Dibayar', tipe: 'rp' }, { k: 'tanggal_bayar', label: 'Tgl bayar', tipe: 'tgl' }] });
+        { k: 'total_bersih', label: 'Total gaji bersih', tipe: 'rp' }, { k: 'total_dibayar', label: 'Sudah dibayar', tipe: 'rp' }, { k: 'tanggal_bayar', label: 'Tgl bayar terakhir', tipe: 'tgl' }] });
     }).catch((e) => R.gagalMuat(e, el.querySelector('[data-list]')));
   }
 

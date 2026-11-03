@@ -13,6 +13,7 @@
     { id: 'dashboard', label: 'Dashboard', ic: 'grid', roles: SEMUA },
     { id: 'transaksi', label: 'Pemasukan & Pengeluaran', ic: 'receipt', roles: OAS },
     { id: 'penjualan', label: 'Penjualan', ic: 'bag', roles: OAS },
+    { id: 'produk', label: 'Produk', ic: 'package', roles: OAV },
     { id: 'piutang', label: 'Piutang & Utang', ic: 'wallet', roles: OAV },
     { id: 'gaji', label: 'Gaji Karyawan', ic: 'users', roles: OA },
     { id: 'aset', label: 'Aset Tetap', ic: 'building', roles: OAV },
@@ -44,6 +45,15 @@
     R.mKry = {}; (b.karyawan || []).forEach((k) => { R.mKry[k.id] = k; });
     if (b.usaha && /^#[0-9A-Fa-f]{6}$/.test(b.usaha.warna_aksen || '') && b.usaha.warna_aksen.toUpperCase() !== '#F97316') document.documentElement.style.setProperty('--accent', b.usaha.warna_aksen);
   }
+  /** Avatar: foto profil bila ada, selain itu huruf depan nama. u = username atau objek user. */
+  R.avatar = function (u, size) {
+    const un = typeof u === 'string' ? u : (u && u.username) || '';
+    const p = ((R.boot && R.boot.pengguna) || []).find((x) => x.u === un) || {};
+    const foto = (typeof u === 'object' && u && u.foto !== undefined) ? u.foto : p.f;
+    const nama = (typeof u === 'object' && u && u.nama) || p.n || un || '?';
+    const st = size ? ' style="width:' + size + 'px;height:' + size + 'px;font-size:' + Math.round(size * 0.4) + 'px"' : '';
+    return foto ? '<span class="avatar foto"' + st + '><img alt="" src="' + R.esc(foto) + '"></span>' : '<span class="avatar"' + st + '>' + R.esc(String(nama).charAt(0).toUpperCase()) + '</span>';
+  };
   R.namaAkun = (no) => (R.mAkun && R.mAkun[no] ? R.mAkun[no].nama : no || '–');
   R.akunKas = () => ((R.boot && R.boot.akun) || []).filter((a) => a.kas && a.aktif);
   R.chTag = (id) => { const c = R.mCh && R.mCh[id]; return c ? '<span class="ch-tag">' + R.chLogo(id, 18) + R.esc(c.nama) + '</span>' : R.esc(id || '–'); };
@@ -134,8 +144,9 @@
     const navBersih = nav.filter((m, i) => !m.grup || (nav[i + 1] && !nav[i + 1].grup));
     root().innerHTML = '<div class="shell"><aside class="side" aria-label="Menu utama"><div class="brand">' + R.brandHTML(us) + '</div><nav class="nav">' +
       navBersih.map((m) => m.grup ? '<div class="nav-label">' + m.grup + '</div>' : '<a href="#/' + m.id + '" data-nav="' + m.id + '">' + R.ic(m.ic) + '<span>' + m.label + '</span>' + (m.id === 'transaksi' ? '<span class="badge-n hidden" data-draft></span>' : '') + '</a>').join('') +
-      '</nav><div class="side-foot"><div class="me" data-akun tabindex="0"><div class="avatar">' + R.esc((u.nama || u.username || '?').charAt(0).toUpperCase()) + '</div><div class="grow"><b class="ellipsis">' + R.esc(u.nama || u.username) + '</b><small>' + R.esc(u.peran) + '</small></div><button class="btn ghost sm icon" data-keluar title="Keluar" aria-label="Keluar">' + R.ic('logout', 's18') + '</button></div></div></aside>' +
+      '</nav><div class="side-foot"><div class="me" data-akun tabindex="0">' + R.avatar(u) + '<div class="grow"><b class="ellipsis">' + R.esc(u.nama || u.username) + '</b><small>' + R.esc(u.peran) + '</small></div><button class="btn ghost sm icon" data-keluar title="Keluar" aria-label="Keluar">' + R.ic('logout', 's18') + '</button></div></div></aside>' +
       '<div class="main"><header class="top"><button class="icon-btn mobile-only" data-menu aria-label="Menu">' + R.ic('menu') + '</button><h1 data-judul>ROVELO Finance</h1><span class="sp"></span><span class="sync desk-only" data-sync><span class="sd"></span><span data-sync-t>Tersinkron</span></span>' +
+      '<button class="icon-btn" data-segarkan aria-label="Segarkan data" title="Segarkan data">' + R.ic('refresh') + '</button>' +
       (R.boleh(OAS) ? '<button class="btn primary sm desk-only" data-catat>' + R.ic('plus', 's16') + ' Catat</button>' : '') +
       '<div style="position:relative"><button class="icon-btn" data-bell aria-label="Pengingat">' + R.ic('bell') + '<span class="dot-n hidden"></span></button></div></header>' +
       '<main class="content" id="view" tabindex="-1"></main></div></div>' + bnav();
@@ -143,13 +154,38 @@
     r.querySelector('[data-keluar]').onclick = (e) => { e.stopPropagation(); app.keluar(); };
     r.querySelector('[data-akun]').onclick = () => { location.hash = '#/akun'; };
     r.querySelector('[data-bell]').onclick = (e) => { e.stopPropagation(); tampilNotif(e.currentTarget.parentElement); };
+    r.querySelector('[data-segarkan]').onclick = segarkan;
     const c = r.querySelector('[data-catat]'); if (c) c.onclick = catatCepat;
     r.querySelector('[data-menu]').onclick = menuLainnya;
     R.on(r, 'click', '[data-fab]', catatCepat);
     R.on(r, 'click', '[data-lainnya]', menuLainnya);
     window.addEventListener('scroll', () => { const t = r.querySelector('.top'); if (t) t.classList.toggle('scrolled', window.scrollY > 4); }, { passive: true });
-    R.api.onStatus((n) => { const s = r.querySelector('[data-sync]'); if (!s) return; s.classList.toggle('busy', n > 0); s.querySelector('[data-sync-t]').textContent = n > 0 ? 'Menyinkronkan…' : 'Tersinkron'; });
+    R.api.onStatus((n) => {
+      const s = r.querySelector('[data-sync]'); if (!s) return;
+      s.classList.toggle('busy', n > 0);
+      const sd = s.firstElementChild;
+      if (n > 0 && !sd.classList.contains('koin-k')) sd.outerHTML = R.koinKecil('xs');
+      if (n <= 0 && sd.classList.contains('koin-k')) sd.outerHTML = '<span class="sd"></span>';
+      s.querySelector('[data-sync-t]').textContent = n > 0 ? 'Menyinkronkan…' : 'Tersinkron';
+    });
   }
+  /** Tombol segarkan: ambil ulang data master & halaman ini dari server (cache server ikut disegarkan untuk Owner/Admin). */
+  let menyegarkan = false;
+  async function segarkan() {
+    if (menyegarkan) return; menyegarkan = true;
+    const b = R.$('[data-segarkan]'); const asli = b.innerHTML; b.innerHTML = R.koinKecil('sm'); b.classList.add('putar');
+    try {
+      if (R.isOA()) await R.api.call('cache.segarkan', {}, { idem: false, tulis: false }).catch(() => {});
+      R.api.segarkan();
+      await app.muatUlangBoot();
+      const br = R.$('.side .brand'); if (br) br.innerHTML = R.brandHTML(R.boot.usaha);
+      const me = R.$('.side-foot .me .avatar'); if (me) me.outerHTML = R.avatar(R.boot.user);
+      muatNotif(); rute();
+      R.toast('Data sudah diperbarui.');
+    } catch (e) { R.galat(e); }
+    finally { b.innerHTML = asli; b.classList.remove('putar'); menyegarkan = false; }
+  }
+  app.segarkan = segarkan;
   function bnav() {
     const it = (id, ic, l) => '<a href="#/' + id + '" data-nav="' + id + '">' + R.ic(ic) + '<span>' + l + '</span></a>';
     if (R.boleh(OAS)) return '<nav class="bnav" aria-label="Navigasi bawah">' + it('dashboard', 'home', 'Beranda') + it('transaksi', 'receipt', 'Transaksi') + '<button class="fab" data-fab aria-label="Catat cepat">' + R.ic('plus') + '</button>' + it('penjualan', 'bag', 'Penjualan') + '<button data-lainnya>' + R.ic('menu') + '<span>Lainnya</span></button></nav>';
@@ -170,7 +206,7 @@
   function menuLainnya() {
     const nav = MENU.filter((m) => !m.grup && R.boleh(m.roles));
     const u = (R.boot && R.boot.user) || {};
-    const d = R.drawer({ judul: 'Menu', isi: '<div class="me mb" data-akun><div class="avatar">' + R.esc((u.nama || '?').charAt(0)) + '</div><div class="grow"><b>' + R.esc(u.nama) + '</b><small>' + R.esc(u.peran) + ' · Akun & kata sandi</small></div>' + R.ic('chevR', 's18') + '</div><div class="sheet-menu">' +
+    const d = R.drawer({ judul: 'Menu', isi: '<div class="me mb" data-akun>' + R.avatar(u) + '<div class="grow"><b>' + R.esc(u.nama) + '</b><small>' + R.esc(u.peran) + ' · Akun & kata sandi</small></div>' + R.ic('chevR', 's18') + '</div><div class="sheet-menu">' +
       nav.map((m) => '<a href="#/' + m.id + '"><span class="si" style="background:var(--canvas)">' + R.ic(m.ic) + '</span>' + m.label + '</a>').join('') + '</div><button class="btn block mt-l" data-keluar>' + R.ic('logout', 's18') + ' Keluar</button>' });
     R.on(d.body, 'click', 'a', () => d.tutup());
     d.body.querySelector('[data-akun]').onclick = () => { d.tutup(); location.hash = '#/akun'; };
@@ -245,7 +281,7 @@
     let sudah = false;
     const tampil = (d) => {
       R.boot = d; indeks();
-      if (!sudah) { sudah = true; kerangka(); rute(); muatNotif(); }
+      if (!sudah) { sudah = true; kerangka(); rute(); muatNotif(); setTimeout(ambilDulu, 1800); }
       else { const br = R.$('.side .brand'); if (br) br.innerHTML = R.brandHTML(d.usaha); }
     };
     if (tersimpan && tersimpan.user && tersimpan.user.username === s.user.username) tampil(tersimpan);
@@ -264,6 +300,11 @@
     }
     setInterval(muatNotif, 5 * 60e3);
   }
+  /** Ambil lebih dulu data halaman yang sering dibuka (digabung jadi 1 permintaan) supaya pindah halaman terasa instan. */
+  R.ambilDulu = R.ambilDulu || [];
+  function ambilDulu() {
+    R.ambilDulu.forEach((x) => { if (!x.roles || R.boleh(x.roles)) { try { x.fn(); } catch (e) { /* abaikan */ } } });
+  }
   /** Muat ulang data master (setelah ubah produk/kategori/pengaturan). */
   app.muatUlangBoot = async function () {
     try {
@@ -273,14 +314,41 @@
   };
   app.muatNotif = muatNotif;
 
+  // ---------- Foto profil ----------
+  /** Pilih foto → potong persegi 160px → simpan. username kosong = diri sendiri. */
+  R.gantiFoto = function (username, selesai) {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = async () => {
+      const f = inp.files[0]; if (!f) return;
+      try {
+        const url = await R.bacaFile(f);
+        const img = await new Promise((ok, no) => { const i = new Image(); i.onload = () => ok(i); i.onerror = () => no(new Error('Gambar tidak valid.')); i.src = url; });
+        const sisi = Math.min(img.width, img.height), c = document.createElement('canvas'); c.width = c.height = 160;
+        c.getContext('2d').drawImage(img, (img.width - sisi) / 2, (img.height - sisi) / 2, sisi, sisi, 0, 0, 160, 160);
+        const foto = c.toDataURL('image/jpeg', 0.82);
+        const r = await R.api.call('pengguna.foto', { username: username || '', foto: foto }, { idem: false });
+        R.toast(r._pesan);
+        await app.muatUlangBoot();
+        const me = R.$('.side-foot .me .avatar'); if (me) me.outerHTML = R.avatar(R.boot.user);
+        if (selesai) selesai(foto);
+      } catch (e) { R.galat(e); }
+    };
+    inp.click();
+  };
+
   // ---------- Halaman akun ----------
   R.halaman.akun = {
     judul: 'Akun Saya', roles: SEMUA,
     render(el) {
       const u = R.boot.user;
-      el.innerHTML = '<div class="page-head"><div><h2>Akun saya</h2><p>Profil dan keamanan akun.</p></div></div><div class="grid g2"><div class="card"><div class="row"><div class="avatar" style="width:56px;height:56px;font-size:20px">' + R.esc(u.nama.charAt(0)) + '</div><div><b style="font-size:17px">' + R.esc(u.nama) + '</b><div class="muted small">@' + R.esc(u.username) + ' · ' + R.esc(u.peran) + '</div></div></div><hr class="divider"><div class="alert">' + R.ic('info', 's18') + '<span>Data nama dan peran diatur oleh Owner di menu Pengaturan → Pengguna.</span></div><button class="btn block mt" data-keluar>' + R.ic('logout', 's18') + ' Keluar dari aplikasi</button></div>' +
+      el.innerHTML = '<div class="page-head"><div><h2>Akun saya</h2><p>Profil dan keamanan akun.</p></div></div><div class="grid g2"><div class="card"><div class="row"><div class="foto-edit" data-foto>' + R.avatar(u, 72) + '<span class="fe-ic">' + R.ic('camera', 's16') + '</span></div><div><b style="font-size:17px">' + R.esc(u.nama) + '</b><div class="muted small">@' + R.esc(u.username) + ' · ' + R.esc(u.peran) + '</div><div class="row mt" style="gap:6px;margin-top:8px"><button class="btn sm" data-ganti>' + R.ic('camera', 's16') + ' ' + (u.foto ? 'Ganti foto' : 'Pasang foto') + '</button>' + (u.foto ? '<button class="btn sm ghost" data-hapus>Hapus</button>' : '') + '</div></div></div><hr class="divider"><div class="alert">' + R.ic('info', 's18') + '<span>Nama dan peran diatur oleh Owner di menu Pengaturan → Pengguna. Foto profil tampil di menu samping, daftar pengguna, dan log aktivitas.</span></div><button class="btn block mt" data-keluar>' + R.ic('logout', 's18') + ' Keluar dari aplikasi</button></div>' +
         '<form class="card" novalidate><h3 class="sec">Ganti kata sandi</h3><p class="sec-sub">Setelah diganti, sesi di perangkat lain otomatis keluar.</p><div class="stack mt"><div class="field"><label>Kata sandi lama</label><input class="inp" name="l" type="password" autocomplete="current-password"></div><div class="field"><label>Kata sandi baru</label><input class="inp" name="b" type="password" autocomplete="new-password"><span class="hint">Minimal 8 karakter, huruf besar, huruf kecil, dan angka.</span></div><button class="btn primary">Simpan kata sandi</button></div></form></div>';
       el.querySelector('[data-keluar]').onclick = app.keluar;
+      const ulang = () => rute();
+      el.querySelector('[data-foto]').onclick = () => R.gantiFoto('', ulang);
+      el.querySelector('[data-ganti]').onclick = () => R.gantiFoto('', ulang);
+      const h = el.querySelector('[data-hapus]');
+      if (h) h.onclick = async () => { try { const r = await R.api.call('pengguna.foto', { foto: '' }, { idem: false }); R.toast(r._pesan); await app.muatUlangBoot(); const me = R.$('.side-foot .me .avatar'); if (me) me.outerHTML = R.avatar(R.boot.user); ulang(); } catch (e) { R.galat(e); } };
       const f = el.querySelector('form');
       f.onsubmit = async (e) => {
         e.preventDefault(); const b = f.querySelector('.btn'); b.classList.add('busy');

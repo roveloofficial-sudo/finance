@@ -8,6 +8,8 @@
     return '<option value="">— pilih akun —</option>' + Object.keys(grup).sort().map((g) => '<optgroup label="' + esc(g + ' ' + (kel[g] || '')) + '">' + grup[g].map((a) => '<option value="' + a.no + '" ' + (a.no === pilih ? 'selected' : '') + '>' + a.no + ' · ' + esc(a.nama) + '</option>').join('') + '</optgroup>').join('');
   };
   R.opsiAkun = opsiAkun;
+  /** Buka buku besar akun tertentu (dipakai dari laporan keuangan). */
+  R.keBukuBesar = (akun, per) => { sb.akun = akun; if (per) sb.per = per; sb.tab = 'bb'; location.hash = '#/pembukuan?tab=bb'; };
   const sb = { tab: 'jurnal', per: null, jenis: '', status: '', cari: '', hal: 1, akun: '1-1201', tglNs: null, versi: 'sesudah', periodeP: null };
 
   R.halaman.pembukuan = {
@@ -142,7 +144,7 @@
       R.tabel(el.querySelector('[data-list]'), { baris: d, ringkas: true, klik: (p) => cek(p.periode), kolom: [{ k: 'label', label: 'Bulan', lead: true }, { k: 'status', label: 'Status', render: (p) => '<span class="badge ' + (p.status === 'Terkunci' ? 'k' : 'a') + '">' + R.ic(p.status === 'Terkunci' ? 'lock' : 'unlock', 's16') + ' ' + esc(p.status) + '</span>' + (p.dikunci_oleh ? '<span class="t2">oleh ' + esc(p.dikunci_oleh) + '</span>' : '') }] });
     }).catch((e) => R.gagalMuat(e, el.querySelector('[data-list]'), muat));
     async function cek(p) {
-      const box = el.querySelector('[data-cek]'); box.innerHTML = '<div class="sk t"></div>' + '<div class="sk l"></div>'.repeat(5);
+      const box = el.querySelector('[data-cek]'); box.innerHTML = R.loaderMini('Memeriksa periode');
       try {
         const d = await R.api.get('periode.cek', { periode: p });
         box.innerHTML = '<div class="card-head"><div><h3 class="sec">Tutup buku ' + esc(d.label) + '</h3><div class="sec-sub">' + (d.terkunci ? 'Periode terkunci — transaksi bertanggal bulan ini tidak bisa ditambah/diubah.' : 'Kunci periode setelah semua pemeriksaan lulus.') + '</div></div>' + (d.terkunci ? '<span class="badge k">' + R.ic('lock', 's16') + ' Terkunci</span>' : '') + '</div>' +
@@ -290,7 +292,7 @@
   }
 
   function channel(el, nav) {
-    el.innerHTML = '<div class="row between mb"><span class="small muted">Profil potongan dipakai untuk menghitung potongan saat input manual & impor tanpa kolom potongan.</span><button class="btn sm" data-ch>' + R.ic('plus', 's16') + ' Channel baru</button></div><div class="grid g2" data-list>' + '<div class="card"><div class="sk b"></div></div>'.repeat(2) + '</div>';
+    el.innerHTML = '<div class="row between mb"><span class="small muted">Profil potongan dipakai untuk menghitung potongan saat input manual & impor tanpa kolom potongan.</span><button class="btn sm" data-ch>' + R.ic('plus', 's16') + ' Channel baru</button></div><div class="grid g2" data-list>' + '<div class="card">' + R.loaderMini('Memuat channel') + '</div>' + '</div>';
     const muat = () => Promise.all([R.api.get('master.list', { jenis: 'channel' }), R.api.get('master.list', { jenis: 'biaya' })]).then(([chs, by]) => {
       if (!R.masihDi(nav)) return;
       const hari = R.hariIni();
