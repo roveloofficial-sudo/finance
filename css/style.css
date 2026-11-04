@@ -604,3 +604,37 @@ table.akt i.gp { visibility: hidden; font-style: normal; }
 .tbl.gaji td, .tbl.gaji th { padding-left: 6px; padding-right: 6px; }
 .tbl.gaji td:nth-child(3) { min-width: 150px; }
 .tbl.gaji td:nth-child(3) b { white-space: nowrap; }
+
+/* ============================================================
+   v1.2.1 — Loading: logo ROVELO + gelombang oranye (pengganti koin Rp)
+   ============================================================ */
+.lw-wrap { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+.lw { position: relative; display: inline-flex; flex-direction: column; align-items: center; gap: 8px; width: 132px; }
+.lw-logo { display: block; width: 100%; aspect-ratio: 676 / 106;
+  -webkit-mask: url('../img/rovelo-hitam.png') center / contain no-repeat; mask: url('../img/rovelo-hitam.png') center / contain no-repeat;
+  background: linear-gradient(100deg, #1F2328 0%, #1F2328 38%, #FB923C 46%, #FFE2C4 50%, #FB923C 54%, #1F2328 62%, #1F2328 100%);
+  background-size: 260% 100%; animation: lwSapu 1.8s cubic-bezier(.45, .05, .35, 1) infinite; }
+.lw-gel { width: 100%; height: 14px; overflow: visible; }
+.lw-gel path { fill: none; stroke-linecap: round; stroke-width: 2.6; vector-effect: non-scaling-stroke; animation: lwGel 1.4s linear infinite; }
+.lw-gel .g1 { stroke: #F97316; }
+.lw-gel .g2 { stroke: #FDBA74; opacity: .75; animation-duration: 2.1s; }
+.lw.besar { width: 190px; }
+.lw.besar .lw-gel { height: 18px; }
+.lw-teks { font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.lw-teks b { animation: titik 1.2s infinite; opacity: .2; } .lw-teks b:nth-child(2) { animation-delay: .2s; } .lw-teks b:nth-child(3) { animation-delay: .4s; }
+@keyframes lwSapu { from { background-position: 100% 0; } to { background-position: 0% 0; } }
+@keyframes lwGel { from { transform: translateX(0); } to { transform: translateX(-60px); } }
+.muat-koin .lw { width: 112px; }
+/* indikator kecil: gelombang batang oranye */
+.lw-k { display: inline-flex; align-items: center; gap: 2px; height: 16px; }
+.lw-k i { display: block; width: 3px; height: 100%; border-radius: 2px; background: #F97316; animation: lwBatang 1s ease-in-out infinite; transform-origin: center; }
+.lw-k i:nth-child(2) { animation-delay: .12s; background: #FB923C; } .lw-k i:nth-child(3) { animation-delay: .24s; } .lw-k i:nth-child(4) { animation-delay: .36s; background: #FDBA74; }
+.lw-k.xs { height: 11px; gap: 1.5px; } .lw-k.xs i { width: 2px; }
+.lw-k.sm { height: 18px; }
+@keyframes lwBatang { 0%, 100% { transform: scaleY(.3); } 50% { transform: scaleY(1); } }
+@media (prefers-reduced-motion: reduce) { .lw-logo, .lw-gel path, .lw-k i { animation-duration: 4s !important; } }
+.lw { gap: 4px; }
+.lw-sub { align-self: flex-end; font-size: 9px; font-weight: 800; letter-spacing: .28em; color: #EA6A0C; margin-top: -2px; margin-right: -.28em; line-height: 1; }
+.lw.besar .lw-sub { font-size: 11px; }
+.lw-gel { margin-top: 4px; }
+.lw-gel { overflow: hidden; }

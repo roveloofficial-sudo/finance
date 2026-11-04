@@ -164,8 +164,8 @@
       const s = r.querySelector('[data-sync]'); if (!s) return;
       s.classList.toggle('busy', n > 0);
       const sd = s.firstElementChild;
-      if (n > 0 && !sd.classList.contains('koin-k')) sd.outerHTML = R.koinKecil('xs');
-      if (n <= 0 && sd.classList.contains('koin-k')) sd.outerHTML = '<span class="sd"></span>';
+      if (n > 0 && !sd.classList.contains('lw-k')) sd.outerHTML = R.koinKecil('xs');
+      if (n <= 0 && sd.classList.contains('lw-k')) sd.outerHTML = '<span class="sd"></span>';
       s.querySelector('[data-sync-t]').textContent = n > 0 ? 'Menyinkronkan…' : 'Tersinkron';
     });
   }

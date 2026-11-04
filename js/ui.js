@@ -155,7 +155,10 @@
     const c = R.mCh && R.mCh[id];
     return '<span class="ch-dot" style="background:' + esc(c ? c.warna : '#94A3B8') + '"></span>';
   };
-  R.loaderKoin = (teks) => '<div class="boot"><div class="koin-wrap"><img class="brand-word" src="img/rovelo-hitam.png" alt="ROVELO"><div class="koin-lompat"><div class="koin"><i>Rp</i><i class="b">R</i></div></div><div class="koin-bayang"></div><div class="koin-teks">' + esc(teks || 'Memuat ROVELO Finance') + '<b>.</b><b>.</b><b>.</b></div></div></div>';
+  /** Loading utama: logo ROVELO disapu cahaya oranye + gelombang oranye. */
+  const gelombang = '<svg class="lw-gel" viewBox="0 0 240 24" preserveAspectRatio="none" aria-hidden="true"><path class="g1" d="M0 12 Q 15 2 30 12 T 60 12 T 90 12 T 120 12 T 150 12 T 180 12 T 210 12 T 240 12 T 270 12 T 300 12"/><path class="g2" d="M0 12 Q 15 22 30 12 T 60 12 T 90 12 T 120 12 T 150 12 T 180 12 T 210 12 T 240 12 T 270 12 T 300 12"/></svg>';
+  R.logoMuat = (cls) => '<span class="lw ' + (cls || '') + '" role="img" aria-label="ROVELO"><span class="lw-logo"></span><span class="lw-sub">FINANCE</span>' + gelombang + '</span>';
+  R.loaderKoin = (teks) => '<div class="boot"><div class="lw-wrap">' + R.logoMuat('besar') + '<div class="lw-teks">' + esc(teks || 'Memuat ROVELO Finance') + '<b>.</b><b>.</b><b>.</b></div></div></div>';
 
   // ---------- Bus peristiwa antar-halaman ----------
   const bus = document.createElement('i');
@@ -241,8 +244,9 @@
 
   // ---------- Kerangka & kosong ----------
   /** Animasi koin Rp berputar untuk semua keadaan memuat. */
-  R.koinKecil = (cls) => '<span class="koin-k ' + (cls || '') + '" aria-hidden="true"><span class="koin"><i>Rp</i><i class="b">Rp</i></span></span>';
-  R.loaderMini = (teks) => '<div class="muat-koin" role="status">' + R.koinKecil() + '<div class="koin-teks">' + esc(teks || 'Memuat data') + '<b>.</b><b>.</b><b>.</b></div></div>';
+  /** Indikator kecil (tombol segarkan, status sinkron): gelombang oranye 3 batang. */
+  R.koinKecil = (cls) => '<span class="lw-k ' + (cls || '') + '" aria-hidden="true"><i></i><i></i><i></i><i></i></span>';
+  R.loaderMini = (teks) => '<div class="muat-koin" role="status">' + R.logoMuat() + '<div class="lw-teks">' + esc(teks || 'Memuat data') + '<b>.</b><b>.</b><b>.</b></div></div>';
   R.kerangka = (n, tipe) => tipe === 'kartu' ? '<div class="card">' + R.loaderMini('Memuat ringkasan') + '</div>' : '<div class="card">' + R.loaderMini('Memuat data') + '</div>';
   R.kosong = (judul, pesan, ikon, aksi) => '<div class="empty"><div class="em-ic">' + R.ic(ikon || 'search', 's24') + '</div><b>' + esc(judul) + '</b>' + esc(pesan || '') + (aksi ? '<div class="mt">' + aksi + '</div>' : '') + '</div>';
   R.gagalMuat = (e, el, ulang) => { el.innerHTML = '<div class="card">' + R.kosong('Gagal memuat data', e.message, 'alert', '<button class="btn sm" data-ulang>' + R.ic('refresh', 's16') + ' Coba lagi</button>') + '</div>'; const b = el.querySelector('[data-ulang]'); if (b && ulang) b.onclick = ulang; };
